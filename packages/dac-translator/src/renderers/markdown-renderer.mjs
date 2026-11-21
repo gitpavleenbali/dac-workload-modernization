@@ -335,7 +335,7 @@ export function buildCentralRepoBlocks(ir) {
  * Create initial baseline files if they do not exist yet, or non-destructively update
  * managed blocks if they already exist!
  */
-export function renderAllDocumentation({ repoRoot, centralDocsRoot, ir }) {
+export function renderAllDocumentation({ repoRoot, centralDocsRoot, ir, agenticReview = false }) {
   const { prov, readmeBlocks, localArchBlocks } = buildLocalRepoBlocks(ir);
   const updatedFiles = [];
 
@@ -534,6 +534,7 @@ ${wrapBlock('contrib-repo-contracts', central.contributorGuideBlocks['contrib-re
           sourceRepo: ir.sourceRepo,
           sourceCommit: ir.sourceCommit,
           semanticHash: ir.semanticHash,
+          ...(agenticReview ? { agenticReview: true } : {}),
           nodeCount: ir.nodes.length,
           subnetCount: ir.network?.subnets?.length || 0,
           syncedAt: ir.extractedAt

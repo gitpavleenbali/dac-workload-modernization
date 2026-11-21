@@ -5,7 +5,10 @@ import { execFileSync } from 'node:child_process';
 import {
   buildArchitectureIR,
   computeArchitectureDelta,
+  buildLocalRepoBlocks,
+  buildCentralRepoBlocks,
   renderAllDocumentation,
+  upsertManagedBlocks,
   validateMarkdownMermaidBlocks,
   verifyManagedBlocksAndHumanProse,
   generateGroundedAiNarrative,
@@ -110,30 +113,47 @@ async function main() {
 
   if (command === 'verify') {
     const ir = buildArchitectureIR(repoRoot, { sourceCommit, sourceRepo });
+    const { readmeBlocks, localArchBlocks } = buildLocalRepoBlocks(ir);
     const targets = [
-      path.join(repoRoot, 'README.md'),
-      path.join(repoRoot, 'docs', 'architecture.md')
+      [path.join(repoRoot, 'README.md'), readmeBlocks],
+      [path.join(repoRoot, 'docs', 'architecture.md'), localArchBlocks]
     ];
     if (args['central-docs']) {
       const pDir = path.join(path.resolve(args['central-docs']), ir.service.centralDocsProductPath);
-      for (const f of ['architecture.md', 'admin-guide.md', 'user-guide.md', 'contributor-guide.md']) {
-        targets.push(path.join(pDir, f));
-      }
+      const { architectureBlocks, adminGuideBlocks, userGuideBlocks, contributorGuideBlocks } = buildCentralRepoBlocks(ir);
+      targets.push(
+        [path.join(pDir, 'architecture.md'), architectureBlocks],
+        [path.join(pDir, 'admin-guide.md'), adminGuideBlocks],
+        [path.join(pDir, 'user-guide.md'), userGuideBlocks],
+        [path.join(pDir, 'contributor-guide.md'), contributorGuideBlocks]
+      );
     }
 
     const errors = [];
     let totalMermaidBlocks = 0;
-    for (const file of targets) {
+    for (const [file, blocks] of targets) {
+      const label = path.relative(process.cwd(), file);
       if (!fs.existsSync(file)) {
-        errors.push(`Missing expected documentation file: ${file}`);
+        errors.push(`Missing expected documentation file: ${label}`);
         continue;
       }
-      const text = fs.readFileSync(file, 'utf8');
-      const mRes = validateMarkdownMermaidBlocks(text, path.relative(process.cwd(), file));
+      const text = fs.readFileSync(file, 'utf8').replaceAll('\r\n', '\n');
+      const mRes = validateMarkdownMermaidBlocks(text, label);
       totalMermaidBlocks += mRes.mermaidBlockCount;
       if (!mRes.valid) errors.push(...mRes.errors);
-      const bRes = verifyManagedBlocksAndHumanProse(null, text, path.relative(process.cwd(), file));
+      const bRes = verifyManagedBlocksAndHumanProse(null, text, label);
       if (!bRes.valid) errors.push(...bRes.errors);
+      for (const id of Object.keys(blocks)) {
+        if (bRes.managedBlockIds?.filter((candidate) => candidate === id).length !== 1) {
+          errors.push(`${label}: expected exactly one DAC block "${id}".`);
+        }
+      }
+      // A docs-only commit changes the source SHA, not the facts or the rendered body.
+      const withoutRevision = text.replace(/(<!--\s*BEGIN DAC:[\w-]+) source="[^"]*"/g, '$1');
+      const expected = upsertManagedBlocks(withoutRevision, blocks, { semanticHash: ir.semanticHash });
+      if (expected !== withoutRevision) {
+        errors.push(`${label}: stale generated Markdown. Run npm run dac:render${args['central-docs'] ? ' with --central-docs for the central checkout' : ''} and commit the update.`);
+      }
     }
 
     if (errors.length > 0) {
@@ -204,6 +224,7 @@ async function main() {
       ir: afterIR,
       prTitle,
       prBody,
+      agenticReview: Boolean(args['agentic-review']),
       draft: Boolean(args.draft)
     });
 
@@ -218,7 +239,7 @@ Commands:
   dac-translator diff --before <irA.json> --after <irB.json> [--out <delta.json>] [--summary-md <pr.md>] [--ai-enrich]
   dac-translator render [--repo <dir>] [--central-docs <dir>]
   dac-translator verify [--repo <dir>] [--central-docs <dir>]
-  dac-translator sync-central-pr --central-repo <owner/repo> [--before-ir <ir.json>] [--ai-enrich] [--draft]
+  dac-translator sync-central-pr --central-repo <owner/repo> [--before-ir <ir.json>] [--agentic-review] [--ai-enrich] [--draft]
 `);
 }
 

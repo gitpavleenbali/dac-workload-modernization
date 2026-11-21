@@ -1,10 +1,11 @@
-name: "Option 1 — DAC Translator (GitHub Actions)"
+name: "Docs-as-Code — workload PR"
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
     inputs:
       sync_central_pr:
@@ -12,15 +13,50 @@ on:
         required: false
         type: boolean
         default: false
+      run_agentic_docs:
+        description: "Option 2: run Copilot in both repos (also check Update the central docs PR)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
-  pull-requests: write
+
+concurrency:
+  group: dac-workload-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
-  validate-and-translate:
-    name: Validate IaC, Verify Mermaid & Compute Architecture Delta
+  build:
+    name: Build and test the workload
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+      - name: Check application syntax and run tests
+        run: |
+          node --check src/server.mjs
+          npm test
+      - name: Build the AKS container locally (no push)
+        if: hashFiles('Dockerfile') != ''
+        run: docker build --tag dac-workload-ci:local .
+
+  validate-and-translate:
+    name: "Option 1 / Validate IaC, verify Markdown and compare architecture"
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    outputs:
+      head_sha: ${{ steps.delta.outputs.head_sha }}
+      base_sha: ${{ steps.delta.outputs.base_sha }}
+      agentic_review: ${{ steps.prepare.outputs.agentic_review }}
+      publish_central: ${{ steps.prepare.outputs.publish_central }}
     steps:
       - name: Checkout repository with history
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -39,9 +75,6 @@ jobs:
         with:
           terraform_version: '1.9.8'
 
-      - name: Run Microservice & DAC Translator Unit Tests
-        run: npm test
-
       - name: Validate Terraform Landing Zone Configuration
         run: |
           terraform -chdir=infra/terraform init -backend=false -no-color
@@ -52,6 +85,7 @@ jobs:
         run: npm run dac:verify
 
       - name: Extract Current IR & Compute Semantic Delta vs Base
+        id: delta
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
@@ -75,6 +109,7 @@ jobs:
             --after .dac-out/after-ir.json \
             --out .dac-out/delta.json \
             --summary-md .dac-out/pr-summary.md
+          printf 'head_sha=%s\nbase_sha=%s\n' "$HEAD_SHA" "$BASE_SHA" >> "$GITHUB_OUTPUT"
 
           cat .dac-out/pr-summary.md >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
@@ -85,6 +120,76 @@ jobs:
             const ir = JSON.parse(fs.readFileSync(".dac-out/after-ir.json", "utf8"));
             fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, "```mermaid\n" + renderTopologyMermaid(ir) + "\n```\n");
           '
+
+      - name: Scope this run and prepare bounded Copilot evidence
+        id: prepare
+        env:
+          MANUAL_SYNC: ${{ inputs.sync_central_pr }}
+          MANUAL_AGENT: ${{ inputs.run_agentic_docs }}
+          TRUSTED_ACTOR: ${{ github.actor == github.repository_owner && github.triggering_actor == github.repository_owner }}
+          OPTED_IN_PR: >-
+            ${{ github.event_name == 'pull_request' &&
+                github.event.pull_request.user.login == github.repository_owner &&
+                github.event.pull_request.head.repo.full_name == github.repository &&
+                github.head_ref == 'feat/modernize-vm-to-aks' &&
+                contains(github.event.pull_request.labels.*.name, 'dac-agentic') &&
+                (github.event.action != 'labeled' || github.event.label.name == 'dac-agentic') }}
+        run: |
+          agent=false
+          publish=false
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] && { [ "$MANUAL_SYNC" = true ] || [ "$MANUAL_AGENT" = true ]; }; then
+            if [ "$TRUSTED_ACTOR" != true ] || [ "$GITHUB_REF" != refs/heads/feat/modernize-vm-to-aks ]; then
+              echo "::error::As the demo repository owner, select feat/modernize-vm-to-aks to run Copilot or publish."
+              exit 1
+            fi
+            if [ "$MANUAL_AGENT" = true ] && [ "$MANUAL_SYNC" != true ]; then
+              echo "::error::For Option 2, enable both Copilot and the central docs PR update."
+              exit 1
+            fi
+            [ "$MANUAL_AGENT" != true ] || agent=true
+            [ "$MANUAL_SYNC" != true ] || publish=true
+          elif [ "$OPTED_IN_PR" = true ] && [ "$TRUSTED_ACTOR" = true ]; then
+            agent=true
+            publish=true
+          fi
+          printf 'agentic_review=%s\npublish_central=%s\n' "$agent" "$publish" >> "$GITHUB_OUTPUT"
+          if [ "$agent" = false ] && [ "$publish" = false ]; then
+            exit 0
+          fi
+          if [ ! -f .dac-out/before-ir.json ]; then
+            echo "::error::A verified VM baseline is required for the migration demo."
+            exit 1
+          fi
+          if [ "$agent" = true ]; then
+            mkdir -p "$RUNNER_TEMP/dac-evidence"
+            node --input-type=module <<'NODE'
+            import fs from 'node:fs';
+            import path from 'node:path';
+            const ir = JSON.parse(fs.readFileSync('.dac-out/after-ir.json', 'utf8'));
+            const delta = JSON.parse(fs.readFileSync('.dac-out/delta.json', 'utf8'));
+            const clusters = ir.nodes.filter(node => node.role === 'aks');
+            if (delta.hostingTransition !== 'virtual-machines -> aks-containerized' ||
+                clusters.length !== 1 || !/^[a-z0-9-]{3,63}$/.test(clusters[0].name) ||
+                !/^[a-f0-9]{40}$/.test(ir.sourceCommit)) {
+              throw new Error('Expected one AKS cluster and a validated VM-to-AKS transition.');
+            }
+            const cluster = clusters[0].name;
+            const sourceSha = ir.sourceCommit;
+            const output = path.join(process.env.RUNNER_TEMP, 'dac-evidence');
+            fs.writeFileSync(path.join(output, 'facts.json'), JSON.stringify({ headSha: sourceSha, sourceSha, cluster }));
+            fs.writeFileSync(path.join(output, 'brief.md'),
+              `# Workload architecture proposal\n\nDeclared transition: Azure VM to AKS.\nAKS cluster: ${cluster}\nSource commit: ${sourceSha}\n`);
+          NODE
+          fi
+
+      - name: Share verified architecture facts for Copilot
+        if: steps.prepare.outputs.agentic_review == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dac-evidence-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/dac-evidence/
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Post Sticky Architecture Delta Preview on Source PR
         if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
@@ -110,25 +215,97 @@ jobs:
             echo "Posted architecture preview on source PR #$PR_NUMBER."
           fi
 
-      - name: Open or Update Synchronized PR in Central Platform Docs Repo
-        if: github.event_name == 'workflow_dispatch' && inputs.sync_central_pr
+  agentic-review:
+    name: Option 2 / Workload Copilot proposal
+    needs: validate-and-translate
+    if: >-
+      needs.validate-and-translate.outputs.agentic_review == 'true' &&
+      github.actor == github.repository_owner && github.triggering_actor == github.repository_owner &&
+      ((github.event_name == 'workflow_dispatch' && inputs.run_agentic_docs &&
+        github.ref == 'refs/heads/feat/modernize-vm-to-aks') ||
+       (github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        github.head_ref == 'feat/modernize-vm-to-aks' &&
+        contains(github.event.pull_request.labels.*.name, 'dac-agentic')))
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+    uses: gitpavleenbali/dac-central-platform-docs/.github/workflows/dac-agentic-review.lock.yml@6499971cad525b494559443d8e9a78473ad63899
+    with:
+      scope: workload
+      head_sha: ${{ needs.validate-and-translate.outputs.head_sha }}
+      source_sha: ${{ needs.validate-and-translate.outputs.head_sha }}
+    secrets:
+      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+
+  publish-central:
+    name: Open or update the synchronized central docs PR
+    needs: [validate-and-translate, agentic-review]
+    if: >-
+      !cancelled() && needs.validate-and-translate.result == 'success' &&
+      needs.validate-and-translate.outputs.publish_central == 'true' &&
+      github.actor == github.repository_owner && github.triggering_actor == github.repository_owner &&
+      ((github.event_name == 'workflow_dispatch' && inputs.sync_central_pr &&
+        github.ref == 'refs/heads/feat/modernize-vm-to-aks') ||
+       (github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        github.head_ref == 'feat/modernize-vm-to-aks' &&
+        contains(github.event.pull_request.labels.*.name, 'dac-agentic'))) &&
+      (needs.agentic-review.result == 'success' ||
+       (needs.agentic-review.result == 'skipped' && needs.validate-and-translate.outputs.agentic_review == 'false'))
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Require a verified proposal before handing off Option 2
+        if: needs.validate-and-translate.outputs.agentic_review == 'true'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dac-workload-architecture-proposal-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/verified-proposal
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ needs.validate-and-translate.outputs.head_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+      - name: Restore the checked baseline
+        env:
+          BASE_SHA: ${{ needs.validate-and-translate.outputs.base_sha }}
+          HEAD_SHA: ${{ needs.validate-and-translate.outputs.head_sha }}
+        run: |
+          current_head="$(git ls-remote --exit-code origin refs/heads/feat/modernize-vm-to-aks | cut -f1)"
+          if [ "$current_head" != "$HEAD_SHA" ]; then
+            echo "::error::The demo branch advanced; publish from its newest validation run."
+            exit 1
+          fi
+          mkdir -p .dac-out
+          baseline="$RUNNER_TEMP/dac-publish-base"
+          git worktree add --detach "$baseline" "$BASE_SHA"
+          node packages/dac-translator/bin/dac-translator.mjs extract \
+            --repo "$baseline" --sha "$BASE_SHA" --out .dac-out/before-ir.json
+          git worktree remove "$baseline"
+      - name: Open or update the synchronized central docs PR
         env:
           DAC_CENTRAL_DOCS_TOKEN: ${{ secrets.DAC_CENTRAL_DOCS_TOKEN }}
           DAC_CENTRAL_REPO: ${{ vars.DAC_CENTRAL_REPO || 'gitpavleenbali/dac-central-platform-docs' }}
+          AGENTIC_REVIEW: ${{ needs.validate-and-translate.outputs.agentic_review }}
         run: |
-          if [ "$GITHUB_REF" != "refs/heads/feat/modernize-vm-to-aks" ]; then
-            echo "::error::Select feat/modernize-vm-to-aks to publish the AKS demo."
-            exit 1
-          fi
           if [ -z "$DAC_CENTRAL_DOCS_TOKEN" ]; then
             echo "::error::Configure DAC_CENTRAL_DOCS_TOKEN to publish the central docs PR."
             exit 1
           fi
-          if [ ! -f .dac-out/before-ir.json ]; then
-            echo "::error::A VM baseline is required to publish the migration proposal."
-            exit 1
+          args=()
+          if [ "$AGENTIC_REVIEW" = true ]; then
+            test -s "$RUNNER_TEMP/verified-proposal/architecture.patch"
+            args+=(--agentic-review)
           fi
           node packages/dac-translator/bin/dac-translator.mjs sync-central-pr \
             --central-repo "$DAC_CENTRAL_REPO" \
             --sha "$(git rev-parse HEAD)" \
-            --before-ir .dac-out/before-ir.json
+            --before-ir .dac-out/before-ir.json \
+            "${args[@]}"
