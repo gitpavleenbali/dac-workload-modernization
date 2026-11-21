@@ -16,7 +16,9 @@ on:
 permissions:
   contents: read
   pull-requests: write
-  models: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   validate-and-translate:
@@ -53,13 +55,21 @@ jobs:
       - name: Extract Current IR & Compute Semantic Delta vs Base
         id: delta
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AZURE_OPENAI_CHAT_COMPLETIONS_URL: ${{ vars.AZURE_OPENAI_CHAT_COMPLETIONS_URL }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
         run: |
           mkdir -p .dac-out
-          node packages/dac-translator/bin/dac-translator.mjs extract --out .dac-out/after-ir.json
+          HEAD_SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          node packages/dac-translator/bin/dac-translator.mjs extract --sha "$HEAD_SHA" --out .dac-out/after-ir.json
 
+          BASE_SHA=""
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          elif [ "${{ github.ref_name }}" != "main" ] && git rev-parse --verify origin/main >/dev/null 2>&1; then
+            BASE_SHA="$(git merge-base HEAD origin/main)"
+          fi
+
+          if [ -n "$BASE_SHA" ] && [ "$BASE_SHA" != "$HEAD_SHA" ]; then
             git worktree add /tmp/dac-base "$BASE_SHA"
             node packages/dac-translator/bin/dac-translator.mjs extract --repo /tmp/dac-base --sha "$BASE_SHA" --out .dac-out/before-ir.json || true
             git worktree remove --force /tmp/dac-base
@@ -91,24 +101,35 @@ jobs:
           '
 
       - name: Post Sticky Architecture Delta Preview on Source PR
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          if [ -z "$PR_NUMBER" ] && [ "${{ github.ref_name }}" != "main" ]; then
+            PR_NUMBER=$(gh pr list --repo "${{ github.repository }}" --head "${{ github.ref_name }}" --state open --json number --jq '.[0].number // empty')
+          fi
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No open PR associated with ref ${{ github.ref_name }}; skipping sticky PR comment."
+            exit 0
+          fi
           MARKER="<!-- dac-translator-pr-preview -->"
           BODY=$(printf "%s\n%s" "$MARKER" "$(cat .dac-out/pr-summary.md)")
-          EXISTING_ID=$(gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --jq ".[] | select(.body | startswith(\"$MARKER\")) | .id" | head -n 1)
+          EXISTING_ID=$(gh api "repos/${{ github.repository }}/issues/$PR_NUMBER/comments" --jq ".[] | select(.body | startswith(\"$MARKER\")) | .id" | head -n 1)
           if [ -n "$EXISTING_ID" ]; then
-            gh api -X PATCH "repos/${{ github.repository }}/issues/comments/$EXISTING_ID" -f body="$BODY"
+            gh api -X PATCH "repos/${{ github.repository }}/issues/comments/$EXISTING_ID" -f body="$BODY" >/dev/null
+            echo "Updated sticky Architecture Delta preview comment #$EXISTING_ID on PR #$PR_NUMBER"
           else
-            gh api -X POST "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" -f body="$BODY"
+            gh api -X POST "repos/${{ github.repository }}/issues/$PR_NUMBER/comments" -f body="$BODY" >/dev/null
+            echo "Created sticky Architecture Delta preview comment on PR #$PR_NUMBER"
           fi
 
       - name: Open or Update Synchronized PR in Central Platform Docs Repo
         if: github.event_name == 'pull_request' || github.event_name == 'push' || inputs.sync_central_pr == true
         env:
           DAC_CENTRAL_DOCS_TOKEN: ${{ secrets.DAC_CENTRAL_DOCS_TOKEN }}
-          MODELS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AZURE_OPENAI_CHAT_COMPLETIONS_URL: ${{ vars.AZURE_OPENAI_CHAT_COMPLETIONS_URL }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
           DAC_CENTRAL_REPO: ${{ vars.DAC_CENTRAL_REPO || 'gitpavleenbali/dac-central-platform-docs' }}
         run: |
           if [ -z "$DAC_CENTRAL_DOCS_TOKEN" ]; then

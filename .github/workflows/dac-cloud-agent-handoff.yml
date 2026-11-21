@@ -19,7 +19,9 @@ permissions:
   contents: read
   pull-requests: write
   issues: write
-  models: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   agentic-architecture-review:
@@ -38,8 +40,9 @@ jobs:
 
       - name: Run Grounded AI Architecture Analysis & Generate @copilot Handoff Brief
         env:
-          MODELS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUM: ${{ github.event.pull_request.number || inputs.pr_number }}
+          AZURE_OPENAI_CHAT_COMPLETIONS_URL: ${{ vars.AZURE_OPENAI_CHAT_COMPLETIONS_URL }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          PR_NUM: ${{ github.event.pull_request.number || inputs.pr_number || '1' }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           SOURCE_REPO: ${{ github.repository }}
@@ -48,7 +51,11 @@ jobs:
           mkdir -p .dac-agentic
           node packages/dac-translator/bin/dac-translator.mjs extract --sha "$HEAD_SHA" --out .dac-agentic/after-ir.json
 
-          if [ -n "$BASE_SHA" ]; then
+          if [ -z "$BASE_SHA" ] && [ "${{ github.ref_name }}" != "main" ] && git rev-parse --verify origin/main >/dev/null 2>&1; then
+            BASE_SHA="$(git merge-base HEAD origin/main)"
+          fi
+
+          if [ -n "$BASE_SHA" ] && [ "$BASE_SHA" != "$HEAD_SHA" ]; then
             git worktree add /tmp/agent-base "$BASE_SHA"
             node packages/dac-translator/bin/dac-translator.mjs extract --repo /tmp/agent-base --sha "$BASE_SHA" --out .dac-agentic/before-ir.json || true
             git worktree remove --force /tmp/agent-base
@@ -63,24 +70,27 @@ jobs:
               : null;
             const after = JSON.parse(fs.readFileSync(".dac-agentic/after-ir.json", "utf8"));
             const delta = computeArchitectureDelta(before, after);
-            const ai = await generateGroundedAiNarrative(delta, after, { token: process.env.MODELS_TOKEN });
+            const ai = await generateGroundedAiNarrative(delta, after);
 
             const issueBody = [
               "<!-- copilot-cloud-agent-handoff -->",
-              "## 🤖 Cloud Agent Handoff: Curate ADR & Narrative Docs for `" + after.service.name + "`",
+              "## 🤖 Copilot Cloud Agent Handoff: Curate ADR-003 & Operational Narrative (`" + after.service.name + "`)",
               "",
-              "> **Agent Profile:** Use `.github/agents/dac-central-curator.agent.md` when assigning this issue to `@copilot`.",
+              "> **How to Demo Live:** Assign this issue to **`@copilot`** (selecting custom agent **`dac-central-curator`** from `.github/agents/dac-central-curator.agent.md`) or open in **Copilot Cloud Sandbox** to watch Copilot author `ADR-003` and validate Mermaid gates automatically.",
               "",
-              "### Source Modernization Context",
-              "- **Source Repo & Commit:** `" + process.env.SOURCE_REPO + "@" + (process.env.HEAD_SHA || "").slice(0, 7) + "`",
-              "- **Hosting Paradigm Shift:** `" + delta.hostingTransition + "`",
-              "- **AI Analysis Engine:** `" + ai.mode + "`",
+              "### Linked Modernization Artifacts",
+              "- **Source IaC & Workload PR:** https://github.com/" + process.env.SOURCE_REPO + "/pull/" + (process.env.PR_NUM || "1"),
+              "- **Automated Deterministic DaC Sync PR:** https://github.com/" + process.env.CENTRAL_REPO + "/pull/1",
+              "- **Source Commit:** `" + process.env.SOURCE_REPO + "@" + (process.env.HEAD_SHA || "").slice(0, 7) + "`",
+              "- **Hosting Paradigm Transition:** `" + delta.hostingTransition + "`",
+              "- **Analysis Engine:** `" + ai.mode + "`",
               "",
-              "### Grounded AI Architectural Assessment",
+              "### Grounded Architectural Shift Summary",
               ai.narrative,
               "",
-              "### Requested `@copilot` Cloud Agent Tasks in `" + process.env.CENTRAL_REPO + "`",
+              "### Tasks for `@copilot` (`dac-central-curator`) in `" + process.env.CENTRAL_REPO + "`",
               ...delta.adrReviewPrompts.map((p) => "- [ ] " + p),
+              "- [ ] Append `### ADR-003: Modernization from Linux VMs to Private AKS, Application Gateway WAF & Service Bus` under the human-owned ADR section of `products/grid-telemetry-service/architecture.md`.",
               "- [ ] Verify `node scripts/validate-central-docs.mjs` passes with zero Mermaid or broken-link errors before marking PR ready for review."
             ].join("\n");
 
@@ -98,7 +108,7 @@ jobs:
             echo "DAC_CENTRAL_DOCS_TOKEN not configured; skipping Central Repo handoff issue creation."
             exit 0
           fi
-          TITLE="[Cloud Agent Handoff] Curate ADR & narrative review for Grid Telemetry modernization"
+          TITLE="[Cloud Agent Handoff] Curate ADR-003 & narrative review for Grid Telemetry VM -> AKS modernization"
           EXISTING_ISSUE=$(gh issue list --repo "$CENTRAL_REPO" --state open --search "in:title \"[Cloud Agent Handoff] Curate ADR\"" --json number --jq '.[0].number // empty')
           if [ -n "$EXISTING_ISSUE" ]; then
             gh issue edit "$EXISTING_ISSUE" --repo "$CENTRAL_REPO" --body-file .dac-agentic/handoff-issue.md
