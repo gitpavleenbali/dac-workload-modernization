@@ -1,0 +1,9 @@
+#cloud-config
+package_update: true
+packages:
+  - curl
+  - ca-certificates
+runcmd:
+  - useradd --system --create-home --shell /usr/sbin/nologin gridsvc
+  - systemctl daemon-reload
+  - systemctl enable --now grid-telemetry.service

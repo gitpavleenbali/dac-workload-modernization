@@ -1,0 +1,20 @@
+{
+  "name": "grid-telemetry-service",
+  "version": "1.0.0",
+  "description": "Grid Substation Telemetry Service & Portable Docs-as-Code Architecture Translator Reference",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.mjs",
+    "test:app": "node --test test/*.test.mjs",
+    "test:dac": "node --test packages/dac-translator/test/*.test.mjs",
+    "test": "node --test test/*.test.mjs packages/dac-translator/test/*.test.mjs",
+    "dac:extract": "node packages/dac-translator/bin/dac-translator.mjs extract",
+    "dac:render": "node packages/dac-translator/bin/dac-translator.mjs render",
+    "dac:verify": "node packages/dac-translator/bin/dac-translator.mjs verify",
+    "dac:diff": "node packages/dac-translator/bin/dac-translator.mjs diff",
+    "dac:sync-pr": "node packages/dac-translator/bin/dac-translator.mjs sync-central-pr"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

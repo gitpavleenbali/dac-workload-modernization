@@ -1,0 +1,126 @@
+name: "Method 1 — DAC Translator CI & Cross-Repo Docs Sync"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      sync_central_pr:
+        description: "Open or update synchronized PR in Central Platform Docs repo"
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  models: read
+
+jobs:
+  validate-and-translate:
+    name: Validate IaC, Verify Mermaid & Compute Architecture Delta
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository with history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.9.8'
+
+      - name: Run Microservice & DAC Translator Unit Tests
+        run: npm test
+
+      - name: Validate Terraform Landing Zone Configuration
+        run: |
+          terraform -chdir=infra/terraform init -backend=false -no-color
+          terraform -chdir=infra/terraform fmt -check
+          terraform -chdir=infra/terraform validate -no-color
+
+      - name: Verify Local Markdown & Mermaid Integrity
+        run: npm run dac:verify
+
+      - name: Extract Current IR & Compute Semantic Delta vs Base
+        id: delta
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p .dac-out
+          node packages/dac-translator/bin/dac-translator.mjs extract --out .dac-out/after-ir.json
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            git worktree add /tmp/dac-base "$BASE_SHA"
+            node packages/dac-translator/bin/dac-translator.mjs extract --repo /tmp/dac-base --sha "$BASE_SHA" --out .dac-out/before-ir.json || true
+            git worktree remove --force /tmp/dac-base
+          fi
+
+          if [ -f .dac-out/before-ir.json ]; then
+            node packages/dac-translator/bin/dac-translator.mjs diff \
+              --before .dac-out/before-ir.json \
+              --after .dac-out/after-ir.json \
+              --out .dac-out/delta.json \
+              --summary-md .dac-out/pr-summary.md \
+              --ai-enrich
+          else
+            node packages/dac-translator/bin/dac-translator.mjs diff \
+              --before .dac-out/missing.json \
+              --after .dac-out/after-ir.json \
+              --out .dac-out/delta.json \
+              --summary-md .dac-out/pr-summary.md
+          fi
+
+          cat .dac-out/pr-summary.md >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Rendered Topology Diagram Preview" >> "$GITHUB_STEP_SUMMARY"
+          node --input-type=module -e '
+            import fs from "node:fs";
+            import { renderTopologyMermaid } from "./packages/dac-translator/src/index.mjs";
+            const ir = JSON.parse(fs.readFileSync(".dac-out/after-ir.json", "utf8"));
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, "```mermaid\n" + renderTopologyMermaid(ir) + "\n```\n");
+          '
+
+      - name: Post Sticky Architecture Delta Preview on Source PR
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          MARKER="<!-- dac-translator-pr-preview -->"
+          BODY=$(printf "%s\n%s" "$MARKER" "$(cat .dac-out/pr-summary.md)")
+          EXISTING_ID=$(gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --jq ".[] | select(.body | startswith(\"$MARKER\")) | .id" | head -n 1)
+          if [ -n "$EXISTING_ID" ]; then
+            gh api -X PATCH "repos/${{ github.repository }}/issues/comments/$EXISTING_ID" -f body="$BODY"
+          else
+            gh api -X POST "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" -f body="$BODY"
+          fi
+
+      - name: Open or Update Synchronized PR in Central Platform Docs Repo
+        if: github.event_name == 'pull_request' || github.event_name == 'push' || inputs.sync_central_pr == true
+        env:
+          DAC_CENTRAL_DOCS_TOKEN: ${{ secrets.DAC_CENTRAL_DOCS_TOKEN }}
+          MODELS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DAC_CENTRAL_REPO: ${{ vars.DAC_CENTRAL_REPO || 'gitpavleenbali/dac-central-platform-docs' }}
+        run: |
+          if [ -z "$DAC_CENTRAL_DOCS_TOKEN" ]; then
+            echo "DAC_CENTRAL_DOCS_TOKEN not configured; skipping cross-repository PR push."
+            exit 0
+          fi
+          BEFORE_ARG=""
+          if [ -f .dac-out/before-ir.json ]; then
+            BEFORE_ARG="--before-ir .dac-out/before-ir.json"
+          fi
+          node packages/dac-translator/bin/dac-translator.mjs sync-central-pr \
+            --central-repo "$DAC_CENTRAL_REPO" \
+            --sha "${{ github.event.pull_request.head.sha || github.sha }}" \
+            $BEFORE_ARG \
+            --ai-enrich

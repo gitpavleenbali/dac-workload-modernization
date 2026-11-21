@@ -1,0 +1,153 @@
+# ==============================================================================
+# Method 1 (Azure DevOps Edition) — Portable DAC Translator Multi-Stage Pipeline
+# ==============================================================================
+# For engineering teams hosting application & IaC repositories in Azure DevOps
+# (where GitHub Copilot Cloud Agent cannot run natively), this pipeline runs the
+# exact same portable `dac-translator` CLI to validate IaC, render Mermaid +
+# Markdown updates, and open/update a governed Pull Request in the Centralized
+# GitHub Platform Documentation Repository.
+# ==============================================================================
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - infra/**
+      - deploy/**
+      - openapi/**
+      - Dockerfile
+      - dac-manifest.json
+
+pr:
+  branches:
+    include:
+      - main
+
+variables:
+  # Link variable group `vg-dac-platform-sync` containing secret `DAC_CENTRAL_DOCS_TOKEN`
+  # (scoped GitHub App installation token or fine-grained PAT for the central docs repo)
+  - name: CENTRAL_DOCS_REPO
+    value: 'gitpavleenbali/dac-central-platform-docs'
+  - name: NODE_VERSION
+    value: '22.x'
+  - name: TERRAFORM_VERSION
+    value: '1.9.8'
+
+stages:
+  - stage: Validate_IaC_And_Workload
+    displayName: 'Stage 1: Validate Workload, IaC & Local Docs'
+    jobs:
+      - job: Validate
+        displayName: 'Unit Tests, Terraform Validate & Mermaid Gate'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            fetchDepth: 0
+
+          - task: NodeTool@0
+            displayName: 'Use Node.js $(NODE_VERSION)'
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - script: npm test
+            displayName: 'Run Microservice & DAC Translator Unit Tests'
+
+          - script: |
+              curl -fsSL "https://releases.hashicorp.com/terraform/$(TERRAFORM_VERSION)/terraform_$(TERRAFORM_VERSION)_linux_amd64.zip" -o tf.zip
+              sudo unzip -o tf.zip -d /usr/local/bin && rm tf.zip
+              terraform -chdir=infra/terraform init -backend=false -no-color
+              terraform -chdir=infra/terraform fmt -check
+              terraform -chdir=infra/terraform validate -no-color
+            displayName: 'Validate Terraform Landing Zone Configuration'
+
+          - script: npm run dac:verify
+            displayName: 'Verify Local Repository Markdown & Mermaid Syntax'
+
+  - stage: Compute_Architecture_Delta
+    displayName: 'Stage 2: Extract Canonical IR & Architecture Delta'
+    dependsOn: Validate_IaC_And_Workload
+    jobs:
+      - job: Translate
+        displayName: 'Build Canonical IR & Preview Documentation Diff'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            fetchDepth: 0
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - script: |
+              mkdir -p $(Build.ArtifactStagingDirectory)/dac
+              node packages/dac-translator/bin/dac-translator.mjs extract \
+                --sha "$(Build.SourceVersion)" \
+                --source-repo "ado/$(Build.Repository.Name)" \
+                --out "$(Build.ArtifactStagingDirectory)/dac/after-ir.json"
+
+              if [ "$(Build.Reason)" = "PullRequest" ]; then
+                TARGET_BRANCH="origin/$(System.PullRequest.TargetBranchName)"
+                git worktree add /tmp/ado-base "$TARGET_BRANCH"
+                node packages/dac-translator/bin/dac-translator.mjs extract \
+                  --repo /tmp/ado-base \
+                  --out "$(Build.ArtifactStagingDirectory)/dac/before-ir.json" || true
+                git worktree remove --force /tmp/ado-base
+              fi
+
+              BEFORE_FILE="$(Build.ArtifactStagingDirectory)/dac/before-ir.json"
+              if [ ! -f "$BEFORE_FILE" ]; then BEFORE_FILE="/tmp/nonexistent.json"; fi
+
+              node packages/dac-translator/bin/dac-translator.mjs diff \
+                --before "$BEFORE_FILE" \
+                --after "$(Build.ArtifactStagingDirectory)/dac/after-ir.json" \
+                --out "$(Build.ArtifactStagingDirectory)/dac/delta.json" \
+                --summary-md "$(Build.ArtifactStagingDirectory)/dac/architecture-delta-summary.md" \
+                --ai-enrich
+            displayName: 'Extract Architecture IR & Generate Grounded Delta Summary'
+            env:
+              AZURE_OPENAI_CHAT_COMPLETIONS_URL: $(AZURE_OPENAI_CHAT_COMPLETIONS_URL)
+              MODELS_TOKEN: $(AZURE_OPENAI_API_KEY)
+
+          - publish: $(Build.ArtifactStagingDirectory)/dac
+            artifact: dac-architecture-delta
+            displayName: 'Publish Architecture IR & Markdown Summary Artifact'
+
+  - stage: Sync_Central_GitHub_Docs
+    displayName: 'Stage 3: Open/Update Central GitHub Docs PR'
+    dependsOn: Compute_Architecture_Delta
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - job: PublishCentralPR
+        displayName: 'Push Rolling Sync Branch & Open Central Docs PR'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+
+          - download: current
+            artifact: dac-architecture-delta
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - script: |
+              BEFORE_ARG=""
+              if [ -f "$(Pipeline.Workspace)/dac-architecture-delta/before-ir.json" ]; then
+                BEFORE_ARG="--before-ir $(Pipeline.Workspace)/dac-architecture-delta/before-ir.json"
+              fi
+              node packages/dac-translator/bin/dac-translator.mjs sync-central-pr \
+                --central-repo "$(CENTRAL_DOCS_REPO)" \
+                --sha "$(Build.SourceVersion)" \
+                --source-repo "ado/$(Build.Repository.Name)" \
+                $BEFORE_ARG \
+                --ai-enrich
+            displayName: 'Synchronize Mermaid Diagrams & Audience Guides to Central GitHub Repo'
+            env:
+              DAC_CENTRAL_DOCS_TOKEN: $(DAC_CENTRAL_DOCS_TOKEN)
+              AZURE_OPENAI_CHAT_COMPLETIONS_URL: $(AZURE_OPENAI_CHAT_COMPLETIONS_URL)
+              MODELS_TOKEN: $(AZURE_OPENAI_API_KEY)

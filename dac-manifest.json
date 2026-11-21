@@ -1,0 +1,18 @@
+{
+  "serviceId": "grid-telemetry-service",
+  "serviceName": "Grid Telemetry & Dispatch Service",
+  "description": "Ingests high-frequency substation voltage, frequency, and thermal telemetry and exposes real-time grid dispatch health APIs.",
+  "landingZone": "alz-energy-ops-prod",
+  "environment": "prod",
+  "region": "westeurope",
+  "resourceGroup": "rg-grid-telemetry-prod",
+  "ownerTeam": "@gitpavleenbali",
+  "sourceRepo": "gitpavleenbali/dac-workload-modernization",
+  "centralDocsRepo": "gitpavleenbali/dac-central-platform-docs",
+  "centralDocsProductPath": "products/grid-telemetry-service",
+  "sloAvailability": "99.95%",
+  "paths": {
+    "terraform": "infra/terraform",
+    "bicep": "infra/bicep"
+  }
+}
