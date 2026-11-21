@@ -1,4 +1,4 @@
-name: "Method 1 — DAC Translator CI & Cross-Repo Docs Sync"
+name: "Option 1 — DAC Translator (GitHub Actions)"
 
 on:
   push:
@@ -8,17 +8,14 @@ on:
   workflow_dispatch:
     inputs:
       sync_central_pr:
-        description: "Open or update synchronized PR in Central Platform Docs repo"
+        description: "Update the central docs PR (run on feat/modernize-vm-to-aks)"
         required: false
         type: boolean
-        default: true
+        default: false
 
 permissions:
   contents: read
   pull-requests: write
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   validate-and-translate:
@@ -26,17 +23,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository with history
-        uses: actions/checkout@v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '22'
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4
         with:
           terraform_version: '1.9.8'
 
@@ -53,42 +52,29 @@ jobs:
         run: npm run dac:verify
 
       - name: Extract Current IR & Compute Semantic Delta vs Base
-        id: delta
         env:
-          AZURE_OPENAI_CHAT_COMPLETIONS_URL: ${{ vars.AZURE_OPENAI_CHAT_COMPLETIONS_URL }}
-          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           mkdir -p .dac-out
-          HEAD_SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          HEAD_SHA="$(git rev-parse HEAD)"
           node packages/dac-translator/bin/dac-translator.mjs extract --sha "$HEAD_SHA" --out .dac-out/after-ir.json
 
-          BASE_SHA=""
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            BASE_SHA="${{ github.event.pull_request.base.sha }}"
-          elif [ "${{ github.ref_name }}" != "main" ] && git rev-parse --verify origin/main >/dev/null 2>&1; then
-            BASE_SHA="$(git merge-base HEAD origin/main)"
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ "$GITHUB_REF_NAME" != "main" ]; then
+            BASE_SHA="$(git merge-base HEAD refs/remotes/origin/main)"
           fi
-
           if [ -n "$BASE_SHA" ] && [ "$BASE_SHA" != "$HEAD_SHA" ]; then
-            git worktree add /tmp/dac-base "$BASE_SHA"
-            node packages/dac-translator/bin/dac-translator.mjs extract --repo /tmp/dac-base --sha "$BASE_SHA" --out .dac-out/before-ir.json || true
-            git worktree remove --force /tmp/dac-base
+            BASE_DIR="$RUNNER_TEMP/dac-base"
+            git worktree add --detach "$BASE_DIR" "$BASE_SHA"
+            node packages/dac-translator/bin/dac-translator.mjs extract \
+              --repo "$BASE_DIR" --sha "$BASE_SHA" --out .dac-out/before-ir.json
+            git worktree remove "$BASE_DIR"
           fi
 
-          if [ -f .dac-out/before-ir.json ]; then
-            node packages/dac-translator/bin/dac-translator.mjs diff \
-              --before .dac-out/before-ir.json \
-              --after .dac-out/after-ir.json \
-              --out .dac-out/delta.json \
-              --summary-md .dac-out/pr-summary.md \
-              --ai-enrich
-          else
-            node packages/dac-translator/bin/dac-translator.mjs diff \
-              --before .dac-out/missing.json \
-              --after .dac-out/after-ir.json \
-              --out .dac-out/delta.json \
-              --summary-md .dac-out/pr-summary.md
-          fi
+          node packages/dac-translator/bin/dac-translator.mjs diff \
+            --before .dac-out/before-ir.json \
+            --after .dac-out/after-ir.json \
+            --out .dac-out/delta.json \
+            --summary-md .dac-out/pr-summary.md
 
           cat .dac-out/pr-summary.md >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
@@ -101,47 +87,48 @@ jobs:
           '
 
       - name: Post Sticky Architecture Delta Preview on Source PR
-        if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          PR_NUMBER="${{ github.event.pull_request.number }}"
-          if [ -z "$PR_NUMBER" ] && [ "${{ github.ref_name }}" != "main" ]; then
-            PR_NUMBER=$(gh pr list --repo "${{ github.repository }}" --head "${{ github.ref_name }}" --state open --json number --jq '.[0].number // empty')
+          if [ -z "$PR_NUMBER" ] && [ "$GITHUB_REF_NAME" != "main" ]; then
+            PR_NUMBER=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$GITHUB_REF_NAME" --state open --json number --jq '.[0].number // empty')
           fi
           if [ -z "$PR_NUMBER" ]; then
-            echo "No open PR associated with ref ${{ github.ref_name }}; skipping sticky PR comment."
+            echo "No open source PR; the architecture preview is available in the run summary."
             exit 0
           fi
           MARKER="<!-- dac-translator-pr-preview -->"
           BODY=$(printf "%s\n%s" "$MARKER" "$(cat .dac-out/pr-summary.md)")
-          EXISTING_ID=$(gh api "repos/${{ github.repository }}/issues/$PR_NUMBER/comments" --jq ".[] | select(.body | startswith(\"$MARKER\")) | .id" | head -n 1)
+          EXISTING_ID=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --jq 'map(select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- dac-translator-pr-preview -->")))) | .[0].id // empty')
           if [ -n "$EXISTING_ID" ]; then
-            gh api -X PATCH "repos/${{ github.repository }}/issues/comments/$EXISTING_ID" -f body="$BODY" >/dev/null
-            echo "Updated sticky Architecture Delta preview comment #$EXISTING_ID on PR #$PR_NUMBER"
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$EXISTING_ID" -f body="$BODY" >/dev/null
+            echo "Updated architecture preview on source PR #$PR_NUMBER."
           else
-            gh api -X POST "repos/${{ github.repository }}/issues/$PR_NUMBER/comments" -f body="$BODY" >/dev/null
-            echo "Created sticky Architecture Delta preview comment on PR #$PR_NUMBER"
+            gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" -f body="$BODY" >/dev/null
+            echo "Posted architecture preview on source PR #$PR_NUMBER."
           fi
 
       - name: Open or Update Synchronized PR in Central Platform Docs Repo
-        if: github.event_name == 'pull_request' || github.event_name == 'push' || inputs.sync_central_pr == true
+        if: github.event_name == 'workflow_dispatch' && inputs.sync_central_pr
         env:
           DAC_CENTRAL_DOCS_TOKEN: ${{ secrets.DAC_CENTRAL_DOCS_TOKEN }}
-          AZURE_OPENAI_CHAT_COMPLETIONS_URL: ${{ vars.AZURE_OPENAI_CHAT_COMPLETIONS_URL }}
-          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
           DAC_CENTRAL_REPO: ${{ vars.DAC_CENTRAL_REPO || 'gitpavleenbali/dac-central-platform-docs' }}
         run: |
-          if [ -z "$DAC_CENTRAL_DOCS_TOKEN" ]; then
-            echo "DAC_CENTRAL_DOCS_TOKEN not configured; skipping cross-repository PR push."
-            exit 0
+          if [ "$GITHUB_REF" != "refs/heads/feat/modernize-vm-to-aks" ]; then
+            echo "::error::Select feat/modernize-vm-to-aks to publish the AKS demo."
+            exit 1
           fi
-          BEFORE_ARG=""
-          if [ -f .dac-out/before-ir.json ]; then
-            BEFORE_ARG="--before-ir .dac-out/before-ir.json"
+          if [ -z "$DAC_CENTRAL_DOCS_TOKEN" ]; then
+            echo "::error::Configure DAC_CENTRAL_DOCS_TOKEN to publish the central docs PR."
+            exit 1
+          fi
+          if [ ! -f .dac-out/before-ir.json ]; then
+            echo "::error::A VM baseline is required to publish the migration proposal."
+            exit 1
           fi
           node packages/dac-translator/bin/dac-translator.mjs sync-central-pr \
             --central-repo "$DAC_CENTRAL_REPO" \
-            --sha "${{ github.event.pull_request.head.sha || github.sha }}" \
-            $BEFORE_ARG \
-            --ai-enrich
+            --sha "$(git rev-parse HEAD)" \
+            --before-ir .dac-out/before-ir.json

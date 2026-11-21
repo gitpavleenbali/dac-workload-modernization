@@ -113,4 +113,11 @@ kubectl apply -f deploy/k8s/
 ## Developer Notes & Local Environment (Human-Maintained)
 
 - **Local Port:** `PORT=8080 npm start` launches the HTTP telemetry server locally with an in-memory ring buffer when PostgreSQL is unreachable.
-- **Docs-as-Code Contract:** Infrastructure or manifest edits automatically update the managed blocks above and open a synchronized Pull Request in the Centralized Platform Documentation repository.
+- **Docs-as-Code Contract:** After infrastructure or manifest edits, run `npm run dac:render` and commit the generated Markdown with the workload change. GitHub Actions verifies the files and previews the architecture change.
+
+## GitHub demo: VM to AKS
+
+1. **Option 1 — DAC Translator:** Open [workload PR #1](https://github.com/gitpavleenbali/dac-workload-modernization/pull/1/files) to see the VM/systemd declarations replaced by AKS and Kubernetes manifests. In [GitHub Actions](https://github.com/gitpavleenbali/dac-workload-modernization/actions/workflows/dac-translator-sync.yml), select **Run workflow**, pick `feat/modernize-vm-to-aks`, and check **Update the central docs PR**. The translator refreshes the [central diagrams and guides in PR #1](https://github.com/gitpavleenbali/dac-central-platform-docs/pull/1/files). Ordinary PR and `main` runs only validate and preview.
+2. **Option 2 — GitHub Copilot Cloud Agent:** Open the [ADR task](https://github.com/gitpavleenbali/dac-central-platform-docs/issues/2). Copilot drafts a separate decision record for review from the same migration evidence. It does not own the generated diagrams or guides. See the [central repo demo instructions](https://github.com/gitpavleenbali/dac-central-platform-docs#github-demo).
+
+Both demos document the intended architecture; neither deploys Azure resources. Azure DevOps teams can call the same `dac-translator` CLI from their own pipelines with a scoped GitHub credential for central PRs. No Azure Pipelines workflow is required for this demo.
