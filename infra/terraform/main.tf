@@ -138,7 +138,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
   location                  = azurerm_resource_group.rg.location
   resource_group_name       = azurerm_resource_group.rg.name
   dns_prefix                = "aks-grid-telemetry"
-  kubernetes_version        = "1.31"
+  kubernetes_version        = "1.32"
   sku_tier                  = "Standard"
   private_cluster_enabled   = true
   oidc_issuer_enabled       = true
@@ -174,11 +174,11 @@ resource "azurerm_kubernetes_cluster" "aks" {
 resource "azurerm_kubernetes_cluster_node_pool" "workload" {
   name                  = "workload"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.aks.id
-  vm_size               = "Standard_D8ds_v5"
+  vm_size               = "Standard_D16ds_v5"
   vnet_subnet_id        = azurerm_subnet.aks_nodes.id
   auto_scaling_enabled  = true
-  min_count             = 3
-  max_count             = 12
+  min_count             = 4
+  max_count             = 20
   zones                 = ["1", "2", "3"]
 }
 
@@ -187,7 +187,7 @@ resource "azurerm_servicebus_namespace" "sb" {
   location                      = azurerm_resource_group.rg.location
   resource_group_name           = azurerm_resource_group.rg.name
   sku                           = "Premium"
-  capacity                      = 1
+  capacity                      = 2
   premium_messaging_partitions  = 1
   public_network_access_enabled = false
 }

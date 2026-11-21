@@ -2,7 +2,7 @@
 
 ## Runtime & CI/CD Delivery Flow
 
-<!-- BEGIN DAC:local-runtime-diagram source="gitpavleenbali/dac-workload-modernization@1f2251fb06ffd941c5031136bc825e2e784c89e6" irHash="d329c4700a63" -->
+<!-- BEGIN DAC:local-runtime-diagram source="gitpavleenbali/dac-workload-modernization@a77df6d1846443937999c73a3fe23eb50c8be9d6" irHash="9d0955415321" -->
 ```mermaid
 flowchart LR
   subgraph sg_cicd["Engineering & CI/CD Delivery"]
@@ -14,7 +14,7 @@ flowchart LR
   subgraph sg_runtime["Production Runtime Execution"]
     api_caller(["API Consumers"])
     rt_ingress["agw-grid-waf"]
-    rt_compute["K8s Deployment: grid-telemetry-api<br/>3 (HPA 3-12 pods)"]
+    rt_compute["K8s Deployment: grid-telemetry-api<br/>4 (HPA 4-24 pods)"]
     api_caller -->|"HTTPS 443"| rt_ingress -->|"ClusterIP :8080"| rt_compute
     acr_reg -.->|"Managed Identity AcrPull"| rt_compute
     rt_redis[("redis-grid-hotstate<br/>Redis Premium")]
@@ -31,7 +31,7 @@ flowchart LR
 
 ## Spoke VNet & Subnet Layout
 
-<!-- BEGIN DAC:local-subnet-table source="gitpavleenbali/dac-workload-modernization@1f2251fb06ffd941c5031136bc825e2e784c89e6" irHash="d329c4700a63" -->
+<!-- BEGIN DAC:local-subnet-table source="gitpavleenbali/dac-workload-modernization@a77df6d1846443937999c73a3fe23eb50c8be9d6" irHash="9d0955415321" -->
 | Subnet Name | CIDR Prefix | Attached NSG | Service Delegation | Hosted / Connected Resources |
 | :--- | :--- | :--- | :--- | :--- |
 | `snet-aks-nodes` | `10.40.4.0/22` | `nsg-aks-grid-nodes` | `None` | `aks-grid-telemetry-prod`, `workload` |
@@ -41,15 +41,15 @@ flowchart LR
 
 ## Provisioned Azure Resources
 
-<!-- BEGIN DAC:local-resource-inventory source="gitpavleenbali/dac-workload-modernization@1f2251fb06ffd941c5031136bc825e2e784c89e6" irHash="d329c4700a63" -->
+<!-- BEGIN DAC:local-resource-inventory source="gitpavleenbali/dac-workload-modernization@a77df6d1846443937999c73a3fe23eb50c8be9d6" irHash="9d0955415321" -->
 | Azure Resource Name | Architectural Type | Category | SKU / Sizing | Subnet / Scope | Key Capabilities |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `agw-grid-waf` | Azure Application Gateway (WAF v2) | `ingress` | `WAF_v2` | `snet-ingress-waf` | TLS / Layer-7 Ingress |
 | `acrgridtelemetryprod` | Azure Container Registry (ACR) | `containers` | `Premium` | `snet-data-pe` | Private Endpoint |
 | `id-grid-telemetry-workload` | User-Assigned Managed Identity | `security` | `Standard` | `rg-grid-telemetry-prod` | Standard |
-| `aks-grid-telemetry-prod` | Azure Kubernetes Service (AKS) | `compute` | `Standard (Standard_D4ds_v5)` | `snet-aks-nodes` | K8s 1.31, Workload Identity, Private Cluster, azure (overlay) |
-| `workload` | AKS Workload Node Pool | `compute` | `Standard_D8ds_v5` | `snet-aks-nodes` | Autoscale 3-12 |
-| `sb-grid-telemetry` | Azure Service Bus | `messaging` | `Premium` | `snet-data-pe` | 1 Messaging Unit, Private Endpoint |
+| `aks-grid-telemetry-prod` | Azure Kubernetes Service (AKS) | `compute` | `Standard (Standard_D4ds_v5)` | `snet-aks-nodes` | K8s 1.32, Workload Identity, Private Cluster, azure (overlay) |
+| `workload` | AKS Workload Node Pool | `compute` | `Standard_D16ds_v5` | `snet-aks-nodes` | Autoscale 4-20 |
+| `sb-grid-telemetry` | Azure Service Bus | `messaging` | `Premium` | `snet-data-pe` | 2 Messaging Units, Private Endpoint |
 | `redis-grid-hotstate` | Azure Managed Redis | `data` | `Premium` | `snet-data-pe` | TLS 1.2, ZoneRedundant, Private Endpoint |
 | `psql-grid-telemetry` | Azure Database for PostgreSQL | `data` | `GP_Standard_D4ds_v5` | `snet-data-pe` | PG v16, HA: ZoneRedundant, Private Endpoint |
 | `kv-grid-telemetry` | Azure Key Vault | `security` | `standard` | `snet-data-pe` | Private Endpoint |

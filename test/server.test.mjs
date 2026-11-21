@@ -60,6 +60,17 @@ test('Grid telemetry API healthz, idempotent ingestion, and grid status endpoint
     assert.equal(batchBody.acceptedCount, 1);
     assert.equal(batchBody.deduplicatedCount, 1);
     assert.equal(batchBody.queuedToServiceBus, 'sb-grid-telemetry/telemetry-events');
+
+    // Verify v2.2 automated dispatch curtailment endpoint
+    const curtailResp = await fetch(`${base}/v1/dispatch/curtailment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ substationId: 'sub-de-west-04', targetReductionMw: 45 })
+    });
+    assert.equal(curtailResp.status, 202);
+    const curtailBody = await curtailResp.json();
+    assert.equal(curtailBody.dispatched, true);
+    assert.equal(curtailBody.targetReductionMw, 45);
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }

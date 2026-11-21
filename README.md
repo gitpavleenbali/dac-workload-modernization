@@ -4,19 +4,19 @@ Ingests high-frequency substation voltage, frequency, and thermal telemetry and 
 
 ## Current Hosting & Landing Zone Summary
 
-<!-- BEGIN DAC:local-hosting-summary source="gitpavleenbali/dac-workload-modernization@1f2251fb06ffd941c5031136bc825e2e784c89e6" irHash="d329c4700a63" -->
+<!-- BEGIN DAC:local-hosting-summary source="gitpavleenbali/dac-workload-modernization@a77df6d1846443937999c73a3fe23eb50c8be9d6" irHash="9d0955415321" -->
 | Attribute | Current Value (Extracted from IaC & Manifests) |
 | :--- | :--- |
 | **Service** | **Grid Telemetry & Dispatch Service** (`grid-telemetry-service`) |
 | **Hosting Paradigm** | **Azure Kubernetes Service (Cloud-Native Containers)** |
 | **Landing Zone / RG** | `alz-energy-ops-prod` / `rg-grid-telemetry-prod` (`westeurope`) |
 | **IaC Definitions** | `terraform`, `bicep` |
-| **Topology Semantic Hash** | `d329c4700a63490f` |
+| **Topology Semantic Hash** | `9d095541532117cb` |
 <!-- END DAC:local-hosting-summary -->
 
 ## Landing Zone Architecture Diagram
 
-<!-- BEGIN DAC:local-topology-diagram source="gitpavleenbali/dac-workload-modernization@1f2251fb06ffd941c5031136bc825e2e784c89e6" irHash="d329c4700a63" -->
+<!-- BEGIN DAC:local-topology-diagram source="gitpavleenbali/dac-workload-modernization@a77df6d1846443937999c73a3fe23eb50c8be9d6" irHash="9d0955415321" -->
 ```mermaid
 flowchart TB
   ext_clients(["External Consumers & Grid Sensors"])
@@ -26,15 +26,15 @@ flowchart TB
   subgraph sg_rg["Landing Zone: alz-energy-ops-prod (rg-grid-telemetry-prod - westeurope)"]
     subgraph sg_vnet["Spoke VNet: vnet-grid-prod (10.40.0.0/16)"]
       subgraph sg_snet_aks_nodes["Subnet: snet-aks-nodes (10.40.4.0/22 • NSG: nsg-aks-grid-nodes)"]
-        aks_aks["Azure Kubernetes Service (AKS)<br/>aks-grid-telemetry-prod (Standard (Standard_D4ds_v5))<br/>K8s 1.31 • Workload Identity • Private Cluster"]
-        aks_node_pool_workload["AKS Workload Node Pool<br/>workload (Standard_D8ds_v5)<br/>Autoscale 3-12"]
+        aks_aks["Azure Kubernetes Service (AKS)<br/>aks-grid-telemetry-prod (Standard (Standard_D4ds_v5))<br/>K8s 1.32 • Workload Identity • Private Cluster"]
+        aks_node_pool_workload["AKS Workload Node Pool<br/>workload (Standard_D16ds_v5)<br/>Autoscale 4-20"]
       end
       subgraph sg_snet_ingress_waf["Subnet: snet-ingress-waf (10.40.10.0/24)"]
         app_gateway_waf_ingress["Azure Application Gateway (WAF v2)<br/>agw-grid-waf (WAF_v2)<br/>TLS / Layer-7 Ingress"]
       end
       subgraph sg_snet_data_pe["Subnet: snet-data-pe (10.40.2.0/24)"]
         acr_acr["Azure Container Registry (ACR)<br/>acrgridtelemetryprod (Premium)<br/>Private Endpoint"]
-        service_bus_sb["Azure Service Bus<br/>sb-grid-telemetry (Premium)<br/>1 Messaging Unit • Private Endpoint"]
+        service_bus_sb["Azure Service Bus<br/>sb-grid-telemetry (Premium)<br/>2 Messaging Units • Private Endpoint"]
         redis_hotstate[("Azure Managed Redis<br/>redis-grid-hotstate (Premium)<br/>TLS 1.2 • ZoneRedundant • Private Endpoint")]
         postgresql_db[("Azure Database for PostgreSQL<br/>psql-grid-telemetry (GP_Standard_D4ds_v5)<br/>PG v16 • HA: ZoneRedundant • Private Endpoint")]
         key_vault_kv["Azure Key Vault<br/>kv-grid-telemetry (standard)<br/>Private Endpoint"]
@@ -81,7 +81,7 @@ flowchart TB
 
 ## Build, Validate & Deploy Quickstart
 
-<!-- BEGIN DAC:local-build-deploy source="gitpavleenbali/dac-workload-modernization@1f2251fb06ffd941c5031136bc825e2e784c89e6" irHash="d329c4700a63" -->
+<!-- BEGIN DAC:local-build-deploy source="gitpavleenbali/dac-workload-modernization@a77df6d1846443937999c73a3fe23eb50c8be9d6" irHash="9d0955415321" -->
 ```bash
 # 1. Run application & DaC translator test suites
 npm test
@@ -100,13 +100,14 @@ kubectl apply -f deploy/k8s/
 
 ## REST API Surface
 
-<!-- BEGIN DAC:local-api-endpoints source="gitpavleenbali/dac-workload-modernization@1f2251fb06ffd941c5031136bc825e2e784c89e6" irHash="d329c4700a63" -->
+<!-- BEGIN DAC:local-api-endpoints source="gitpavleenbali/dac-workload-modernization@a77df6d1846443937999c73a3fe23eb50c8be9d6" irHash="9d0955415321" -->
 | HTTP Method | Endpoint Path | Capability Summary |
 | :--- | :--- | :--- |
 | `GET` | `/healthz` | Kubernetes liveness and readiness probe returning pod runtime mode and buffer depth |
 | `GET` | `/v1/grid/status` | Retrieve current regional grid nominal frequency, active frequency-deviation alerts, and latest substation reading |
 | `POST` | `/v1/telemetry` | Idempotently ingest single substation voltage and frequency telemetry reading |
 | `POST` | `/v1/telemetry/batch` | Asynchronously enqueue high-frequency substation telemetry batch via Azure Service Bus Premium |
+| `POST` | `/v1/dispatch/curtailment` | Issue automated substation load-curtailment dispatch command during grid frequency excursion |
 | `GET` | `/v1/telemetry/recent` | List most recent 25 telemetry readings in the active window |
 <!-- END DAC:local-api-endpoints -->
 

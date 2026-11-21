@@ -27,7 +27,7 @@ metadata:
   name: grid-telemetry-api
   namespace: grid-telemetry
 spec:
-  replicas: 3
+  replicas: 4
   selector:
     matchLabels:
       app: grid-telemetry-api
@@ -40,7 +40,7 @@ spec:
       serviceAccountName: sa-grid-telemetry-workload
       containers:
         - name: api
-          image: acrgridtelemetryprod.azurecr.io/grid-telemetry-service:2.0.0
+          image: acrgridtelemetryprod.azurecr.io/grid-telemetry-service:2.2.0
           ports:
             - containerPort: 8080
           readinessProbe:
@@ -83,8 +83,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: grid-telemetry-api
-  minReplicas: 3
-  maxReplicas: 12
+  minReplicas: 4
+  maxReplicas: 24
   metrics:
     - type: Resource
       resource:
