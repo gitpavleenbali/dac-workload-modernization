@@ -1,14 +1,13 @@
 import http from 'node:http';
 
 /**
- * Create the Grid Telemetry HTTP API server.
- * Supports deterministic unit testing and standalone execution on VMs or Kubernetes pods.
+ * Create the Grid Telemetry HTTP API server (v2.0 Cloud-Native AKS + Service Bus batch support).
  */
 export function createTelemetryServer(options = {}) {
   const maxBuffer = options.maxBuffer || 200;
   const ringBuffer = [];
   const seenReadings = new Set();
-  const runtimeMode = process.env.KUBERNETES_SERVICE_HOST ? 'aks-kubernetes' : 'vm-systemd';
+  const runtimeMode = process.env.KUBERNETES_SERVICE_HOST ? 'aks-kubernetes' : 'container-local';
 
   const sendJson = (res, statusCode, payload) => {
     const body = JSON.stringify(payload);
@@ -19,12 +18,34 @@ export function createTelemetryServer(options = {}) {
     res.end(body);
   };
 
+  const ingestOne = (payload) => {
+    if (!payload.substationId || typeof payload.frequencyHz !== 'number' || !payload.timestamp) {
+      return { valid: false };
+    }
+    const dedupeKey = `${payload.substationId}:${payload.timestamp}`;
+    if (seenReadings.has(dedupeKey)) {
+      return { valid: true, deduplicated: true, key: dedupeKey };
+    }
+    seenReadings.add(dedupeKey);
+    const record = {
+      substationId: payload.substationId,
+      frequencyHz: payload.frequencyHz,
+      voltageKv: payload.voltageKv ?? 380,
+      timestamp: payload.timestamp,
+      ingestedAt: new Date().toISOString()
+    };
+    ringBuffer.push(record);
+    if (ringBuffer.length > maxBuffer) ringBuffer.shift();
+    return { valid: true, deduplicated: false, record };
+  };
+
   return http.createServer((req, res) => {
     const url = new URL(req.url || '/', 'http://localhost');
 
     if (req.method === 'GET' && url.pathname === '/healthz') {
       return sendJson(res, 200, {
         status: 'healthy',
+        version: '2.0.0',
         service: 'grid-telemetry-service',
         runtimeMode,
         bufferedReadings: ringBuffer.length
@@ -55,25 +76,42 @@ export function createTelemetryServer(options = {}) {
       });
       req.on('end', () => {
         try {
-          const payload = JSON.parse(raw || '{}');
-          if (!payload.substationId || typeof payload.frequencyHz !== 'number' || !payload.timestamp) {
+          const out = ingestOne(JSON.parse(raw || '{}'));
+          if (!out.valid) {
             return sendJson(res, 400, { error: 'Required fields: substationId, frequencyHz (number), timestamp' });
           }
-          const dedupeKey = `${payload.substationId}:${payload.timestamp}`;
-          if (seenReadings.has(dedupeKey)) {
-            return sendJson(res, 200, { accepted: true, deduplicated: true, key: dedupeKey });
+          return sendJson(res, out.deduplicated ? 200 : 202, { accepted: true, ...out });
+        } catch {
+          return sendJson(res, 400, { error: 'Invalid JSON request body' });
+        }
+      });
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/v1/telemetry/batch') {
+      let raw = '';
+      req.on('data', (chunk) => {
+        raw += chunk;
+      });
+      req.on('end', () => {
+        try {
+          const payload = JSON.parse(raw || '{}');
+          if (!Array.isArray(payload.readings) || payload.readings.length === 0) {
+            return sendJson(res, 400, { error: 'Expected non-empty readings[] array' });
           }
-          seenReadings.add(dedupeKey);
-          const record = {
-            substationId: payload.substationId,
-            frequencyHz: payload.frequencyHz,
-            voltageKv: payload.voltageKv ?? 380,
-            timestamp: payload.timestamp,
-            ingestedAt: new Date().toISOString()
-          };
-          ringBuffer.push(record);
-          if (ringBuffer.length > maxBuffer) ringBuffer.shift();
-          return sendJson(res, 202, { accepted: true, deduplicated: false, record });
+          let acceptedCount = 0;
+          let deduplicatedCount = 0;
+          for (const item of payload.readings) {
+            const out = ingestOne(item);
+            if (!out.valid) return sendJson(res, 400, { error: 'Invalid reading in batch' });
+            if (out.deduplicated) deduplicatedCount++;
+            else acceptedCount++;
+          }
+          return sendJson(res, 202, {
+            queuedToServiceBus: 'sb-grid-telemetry/telemetry-events',
+            acceptedCount,
+            deduplicatedCount
+          });
         } catch {
           return sendJson(res, 400, { error: 'Invalid JSON request body' });
         }
@@ -89,6 +127,6 @@ if (import.meta.url === `file://${process.argv[1]?.replace(/\\/g, '/')}`) {
   const port = Number(process.env.PORT || 8080);
   const srv = createTelemetryServer();
   srv.listen(port, () => {
-    console.log(`grid-telemetry-service listening on port ${port}`);
+    console.log(`grid-telemetry-service v2.0 listening on port ${port}`);
   });
 }

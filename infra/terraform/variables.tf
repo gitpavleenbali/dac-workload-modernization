@@ -1,5 +1,5 @@
 variable "location" {
-  description = "Primary Azure region for the Grid Telemetry Spoke Landing Zone"
+  description = "Primary Azure region for the Grid Telemetry Cloud-Native AKS Landing Zone"
   type        = string
   default     = "westeurope"
 }
@@ -16,14 +16,8 @@ variable "tenant_id" {
   default     = "00000000-0000-0000-0000-000000000002"
 }
 
-variable "vm_admin_ssh_public_key" {
-  description = "Break-glass SSH public key when AAD login extension is bootstrapping"
-  type        = string
-  default     = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGridTelemetryPlatformPlaceholderKey gridops@example"
-}
-
 variable "postgres_sku" {
-  description = "Azure Database for PostgreSQL Flexible Server SKU"
+  description = "Upgraded Zone-Redundant PostgreSQL Flexible Server SKU for AKS burst throughput"
   type        = string
-  default     = "GP_Standard_D2ds_v5"
+  default     = "GP_Standard_D4ds_v5"
 }
