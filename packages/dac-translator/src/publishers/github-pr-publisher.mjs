@@ -82,7 +82,7 @@ export async function publishCentralDocsPullRequest({
 
     const changedRelFiles = status
       .split(/\r?\n/)
-      .map((l) => l.slice(3).trim())
+      .map((l) => l.replace(/^\s*\S+\s+/, '').trim())
       .filter(Boolean);
 
     runGit(['add', '-A'], tmpDir);
