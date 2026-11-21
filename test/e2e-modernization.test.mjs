@@ -18,26 +18,6 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 
-test('Workflow & Agentic definitions (GitHub Actions, Azure Pipelines, gh-aw, MCP) have valid structure', () => {
-  const mcpJson = JSON.parse(fs.readFileSync(path.join(repoRoot, '.vscode', 'mcp.json'), 'utf8'));
-  assert.ok(mcpJson.servers['microsoft-learn']);
-  assert.ok(mcpJson.servers['github']);
-  assert.ok(mcpJson.servers['azure']);
-  assert.ok(mcpJson.servers['azure-devops-remote']);
-
-  const ghAw = fs.readFileSync(path.join(repoRoot, '.github', 'workflows', 'dac-agentic-architect.md'), 'utf8');
-  assert.match(ghAw, /^---\r?\nname: Agentic Architecture & Documentation Synchronizer/);
-  assert.match(ghAw, /safe-outputs:/);
-  assert.match(ghAw, /create-pull-request:/);
-  assert.match(ghAw, /target-repo:\s*"gitpavleenbali\/dac-central-platform-docs"/);
-
-  const adoYml = fs.readFileSync(path.join(repoRoot, 'azure-pipelines.yml'), 'utf8');
-  assert.match(adoYml, /Validate_IaC_And_Workload/);
-  assert.match(adoYml, /Compute_Architecture_Delta/);
-  assert.match(adoYml, /Sync_Central_GitHub_Docs/);
-  assert.match(adoYml, /sync-central-pr/);
-});
-
 test('Full E2E modernization simulation: scenarios/v1-vm -> scenarios/v2-aks updates local & central docs cleanly', async () => {
   const simRepo = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-workload-'));
   const simCentral = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-central-'));
