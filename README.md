@@ -98,7 +98,19 @@ az network bastion ssh --name bas-grid-ops --resource-group rg-grid-telemetry-pr
 
 ## GitHub demo: VM to AKS
 
-1. **Option 1 — DAC Translator:** Open [workload PR #1](https://github.com/gitpavleenbali/dac-workload-modernization/pull/1/files) to see the VM/systemd declarations replaced by AKS and Kubernetes manifests. In [GitHub Actions](https://github.com/gitpavleenbali/dac-workload-modernization/actions/workflows/dac-translator-sync.yml), select **Run workflow**, pick `feat/modernize-vm-to-aks`, and check **Update the central docs PR**. The translator refreshes the [central diagrams and guides in PR #1](https://github.com/gitpavleenbali/dac-central-platform-docs/pull/1/files). Ordinary PR and `main` runs only validate and preview.
-2. **Option 2 — GitHub Copilot Cloud Agent:** Open the [ADR task](https://github.com/gitpavleenbali/dac-central-platform-docs/issues/2). Copilot drafts a separate decision record for review from the same migration evidence. It does not own the generated diagrams or guides. See the [central repo demo instructions](https://github.com/gitpavleenbali/dac-central-platform-docs#github-demo).
+After changing infrastructure or deployment files, run these commands from this repository:
+
+```sh
+npm run dac:render
+npm run dac:verify
+npm test
+git diff -- README.md docs/architecture.md
+```
+
+`dac:render` updates the marked sections in the existing `README.md` and `docs/architecture.md`. It does not push, deploy, or use an LLM. Commit the docs with the workload change; the PR workflow rejects stale generated sections.
+
+1. **Option 1 — DAC Translator:** [Workload PR #1](https://github.com/gitpavleenbali/dac-workload-modernization/pull/1/files) shows the VM-to-AKS code and docs change. Run the [workload workflow](https://github.com/gitpavleenbali/dac-workload-modernization/actions/workflows/dac-translator-sync.yml) on `feat/modernize-vm-to-aks` with **Update the central docs PR** selected and **Option 2** unchecked. Build, tests, Terraform, and DaC checks precede the update to [Central Docs PR #1](https://github.com/gitpavleenbali/dac-central-platform-docs/pull/1/files).
+2. **Option 2 — Copilot in CI:** On that workflow, select both checkboxes. Or, as the owner, add the `dac-agentic` label to the same-repository migration PR to opt in on that event and subsequent pushes. After the same checks, Copilot proposes a verified Markdown patch to the existing workload architecture page. CI then updates the central docs PR, where another verified patch is proposed after central quality checks. Proposals are run artifacts for human review; neither agent commits to a branch. Both repos need a [Copilot inference secret](https://github.github.com/gh-aw/reference/auth/#copilot_github_token) for this mode.
+3. **Option 2 — Copilot Cloud Agent on demand:** The [ADR task](https://github.com/gitpavleenbali/dac-central-platform-docs/issues/2) demonstrates a separate path. Copilot proposes a standalone decision record in a draft PR. It doesn't own the generated diagrams or guides.
 
 Both demos document the intended architecture; neither deploys Azure resources. Azure DevOps teams can call the same `dac-translator` CLI from their own pipelines with a scoped GitHub credential for central PRs. No Azure Pipelines workflow is required for this demo.

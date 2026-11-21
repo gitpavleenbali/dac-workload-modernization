@@ -5,8 +5,8 @@ import path from 'node:path';
 import { renderAllDocumentation } from '../renderers/markdown-renderer.mjs';
 import { validateMarkdownMermaidBlocks, verifyManagedBlocksAndHumanProse } from '../validators/mermaid-validator.mjs';
 
-function runGit(args, cwd) {
-  return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+function runGit(args, cwd, env = process.env) {
+  return execFileSync('git', args, { cwd, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 }
 
 /**
@@ -23,9 +23,10 @@ export async function publishCentralDocsPullRequest({
   ir,
   prTitle,
   prBody,
+  agenticReview = false,
   draft = false
 }) {
-  if (!centralRepoSlug || !centralRepoSlug.includes('/')) {
+  if (!/^[\w-]+\/[a-z\d_.-]+$/i.test(centralRepoSlug ?? '') || /\/\.{1,2}$/.test(centralRepoSlug)) {
     throw new Error(`Invalid centralRepoSlug "${centralRepoSlug}". Expected "owner/repo".`);
   }
   if (!token) {
@@ -34,13 +35,23 @@ export async function publishCentralDocsPullRequest({
 
   const branchName = syncBranch || `dac-sync/${ir.service.id}`;
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dac-central-sync-'));
+  let localScratch;
 
   try {
-    const authedUrl = `https://x-access-token:${encodeURIComponent(token)}@github.com/${centralRepoSlug}.git`;
-    runGit(['clone', '--branch', baseBranch, '--single-branch', authedUrl, tmpDir], process.cwd());
+    const url = `https://github.com/${centralRepoSlug}.git`;
+    const gitAuthEnv = {
+      ...process.env,
+      GIT_TERMINAL_PROMPT: '0',
+      DAC_GIT_AUTH_HEADER: `Authorization: Basic ${Buffer.from(`x-access-token:${token}`).toString('base64')}`
+    };
+    const runAuthenticatedGit = (args, cwd) =>
+      runGit([`--config-env=http.${url}.extraHeader=DAC_GIT_AUTH_HEADER`, ...args], cwd, gitAuthEnv);
+    runAuthenticatedGit(['clone', '--branch', baseBranch, '--single-branch', url, tmpDir], process.cwd());
     runGit(['config', 'user.name', 'dac-translator[bot]'], tmpDir);
     runGit(['config', 'user.email', 'dac-translator-bot@users.noreply.github.com'], tmpDir);
     runGit(['checkout', '-B', branchName], tmpDir);
+    const syncRef = `refs/heads/${branchName}`;
+    const previousTip = runAuthenticatedGit(['ls-remote', 'origin', syncRef], tmpDir).split(/\s+/)[0];
 
     // Snapshot original Markdown files to enforce byte-for-byte human prose preservation
     const productDir = path.join(tmpDir, ir.service.centralDocsProductPath);
@@ -51,12 +62,13 @@ export async function publishCentralDocsPullRequest({
       if (fs.existsSync(full)) originals.set(full, fs.readFileSync(full, 'utf8'));
     }
 
-    const { updatedFiles } = renderAllDocumentation({
-      repoRoot: fs.mkdtempSync(path.join(os.tmpdir(), 'dac-noop-local-')),
+    localScratch = fs.mkdtempSync(path.join(os.tmpdir(), 'dac-noop-local-'));
+    renderAllDocumentation({
+      repoRoot: localScratch,
       centralDocsRoot: tmpDir,
-      ir
+      ir,
+      agenticReview
     });
-    void updatedFiles;
 
     // Gate: Validate Mermaid syntax + Human Prose preservation before committing!
     const gateErrors = [];
@@ -82,7 +94,7 @@ export async function publishCentralDocsPullRequest({
 
     const changedRelFiles = status
       .split(/\r?\n/)
-      .map((l) => l.slice(3).trim())
+      .map((l) => l.replace(/^\s*\S+\s+/, '').trim())
       .filter(Boolean);
 
     runGit(['add', '-A'], tmpDir);
@@ -94,7 +106,7 @@ export async function publishCentralDocsPullRequest({
       ],
       tmpDir
     );
-    runGit(['push', '--force', 'origin', `HEAD:refs/heads/${branchName}`], tmpDir);
+    runAuthenticatedGit(['push', `--force-with-lease=${syncRef}:${previousTip}`, 'origin', `HEAD:${syncRef}`], tmpDir);
 
     const [owner] = centralRepoSlug.split('/');
     const apiBase = `https://api.github.com/repos/${centralRepoSlug}`;
@@ -161,6 +173,7 @@ export async function publishCentralDocsPullRequest({
       changedFiles: changedRelFiles
     };
   } finally {
+    if (localScratch) fs.rmSync(localScratch, { recursive: true, force: true });
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 }

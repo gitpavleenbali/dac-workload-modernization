@@ -17,6 +17,7 @@ import {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
+const translator = path.join(repoRoot, 'packages', 'dac-translator', 'bin', 'dac-translator.mjs');
 
 test('Full E2E modernization simulation: scenarios/v1-vm -> scenarios/v2-aks updates local & central docs cleanly', async () => {
   const simRepo = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-workload-'));
@@ -60,7 +61,7 @@ test('Full E2E modernization simulation: scenarios/v1-vm -> scenarios/v2-aks upd
     assert.equal(delta.hostingTransition, 'virtual-machines -> aks-containerized');
     assert.equal(delta.addedNodes.length, 6, 'Should add AKS, Node Pool, ACR, App Gateway, Service Bus, and UAMI');
 
-    renderAllDocumentation({ repoRoot: simRepo, centralDocsRoot: simCentral, ir: irAks });
+    renderAllDocumentation({ repoRoot: simRepo, centralDocsRoot: simCentral, ir: irAks, agenticReview: true });
 
     // Verify all 4 central guides + 2 local docs pass Mermaid + Human Prose preservation!
     for (const f of ['architecture.md', 'admin-guide.md', 'user-guide.md', 'contributor-guide.md']) {
@@ -75,6 +76,9 @@ test('Full E2E modernization simulation: scenarios/v1-vm -> scenarios/v2-aks upd
     assert.match(fs.readFileSync(path.join(centralProductDir, 'user-guide.md'), 'utf8'), /\/v1\/telemetry\/batch/);
     assert.match(fs.readFileSync(path.join(centralProductDir, 'contributor-guide.md'), 'utf8'), /acrgridtelemetryprod\.azurecr\.io/);
     assert.match(fs.readFileSync(path.join(simRepo, 'README.md'), 'utf8'), /Azure Kubernetes Service \(Cloud-Native Containers\)/);
+    const provenance = JSON.parse(fs.readFileSync(path.join(centralProductDir, 'dac-provenance.json'), 'utf8'));
+    assert.equal(provenance.sourceCommit, '2222222bbbb');
+    assert.equal(provenance.agenticReview, true);
 
     const narrativeResult = await generateGroundedAiNarrative(delta, irAks, { disableNetwork: true });
     const prBody = formatSyncPullRequestBody({ afterIR: irAks, delta, narrativeResult });
@@ -84,5 +88,30 @@ test('Full E2E modernization simulation: scenarios/v1-vm -> scenarios/v2-aks upd
     fs.rmSync(simRepo, { recursive: true, force: true });
     fs.rmSync(simCentral, { recursive: true, force: true });
   }
-  void execFileSync;
+});
+
+test('dac:verify rejects stale generated content and missing markers, but not a new commit SHA', () => {
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'dac-freshness-'));
+  try {
+    fs.copyFileSync(path.join(repoRoot, 'dac-manifest.json'), path.join(repo, 'dac-manifest.json'));
+    fs.cpSync(path.join(repoRoot, 'scenarios', 'v1-vm'), repo, { recursive: true });
+    const dac = (command, sha) => execFileSync(process.execPath, [translator, command, '--repo', repo, '--sha', sha], {
+      encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe']
+    });
+    dac('render', 'old');
+    assert.equal(JSON.parse(dac('verify', 'new')).ok, true);
+
+    const file = path.join(repo, 'README.md');
+    const original = fs.readFileSync(file, 'utf8');
+    fs.writeFileSync(file, original.replace('**Azure Virtual Machines (IaaS)**', '**Incorrect hosting**'));
+    assert.throws(() => dac('verify', 'new'), /stale generated Markdown/);
+    dac('render', 'new');
+    assert.equal(JSON.parse(dac('verify', 'new')).ok, true);
+
+    const repaired = fs.readFileSync(file, 'utf8');
+    fs.writeFileSync(file, repaired.replace(/<!-- BEGIN DAC:local-hosting-summary[^>]*-->[\s\S]*?<!-- END DAC:local-hosting-summary -->/, ''));
+    assert.throws(() => dac('verify', 'new'), /expected exactly one DAC block/);
+  } finally {
+    fs.rmSync(repo, { recursive: true, force: true });
+  }
 });
