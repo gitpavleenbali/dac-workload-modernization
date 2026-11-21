@@ -145,6 +145,9 @@ function buildAudienceImpacts(beforeIR, afterIR, addedNodes, removedNodes, modif
     } else if (n.role === 'service-bus') {
       admin.push(`Monitor dead-letter queues and messaging units on \`${n.name}\` (${n.displayType}).`);
       user.push(`Asynchronous telemetry ingestion is now buffered through \`${n.name}\` for burst resiliency.`);
+    } else if (n.role === 'redis') {
+      admin.push(`Monitor memory pressure, eviction policy, and TLS 6380 Private Link health on \`${n.name}\` (${n.displayType}).`);
+      user.push(`Sub-millisecond hot-state caching for \`GET /v1/grid/status\` backed by \`${n.name}\`.`);
     } else if (n.role === 'managed-identity') {
       admin.push(`Secretless authentication federated via \`${n.name}\` OIDC Workload Identity + Key Vault CSI driver.`);
     }

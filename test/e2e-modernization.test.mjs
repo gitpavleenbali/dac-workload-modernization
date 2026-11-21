@@ -78,7 +78,11 @@ test('Full E2E modernization simulation: scenarios/v1-vm -> scenarios/v2-aks upd
 
     const delta = computeArchitectureDelta(irVm, irAks);
     assert.equal(delta.hostingTransition, 'virtual-machines -> aks-containerized');
-    assert.equal(delta.addedNodes.length, 6, 'Should add AKS, Node Pool, ACR, App Gateway, Service Bus, and UAMI');
+    assert.equal(
+      delta.addedNodes.length,
+      7,
+      'Should add AKS, Node Pool, ACR, App Gateway, Service Bus, Managed Redis, and UAMI'
+    );
 
     renderAllDocumentation({ repoRoot: simRepo, centralDocsRoot: simCentral, ir: irAks });
 
@@ -91,8 +95,11 @@ test('Full E2E modernization simulation: scenarios/v1-vm -> scenarios/v2-aks upd
 
     // Verify specific content shifts across all 4 guides!
     assert.match(fs.readFileSync(path.join(centralProductDir, 'architecture.md'), 'utf8'), /aks-grid-telemetry-prod/);
+    assert.match(fs.readFileSync(path.join(centralProductDir, 'architecture.md'), 'utf8'), /redis-grid-hotstate/);
     assert.match(fs.readFileSync(path.join(centralProductDir, 'admin-guide.md'), 'utf8'), /az aks get-credentials/);
+    assert.match(fs.readFileSync(path.join(centralProductDir, 'admin-guide.md'), 'utf8'), /az redis show/);
     assert.match(fs.readFileSync(path.join(centralProductDir, 'user-guide.md'), 'utf8'), /\/v1\/telemetry\/batch/);
+    assert.match(fs.readFileSync(path.join(centralProductDir, 'user-guide.md'), 'utf8'), /redis-grid-hotstate/);
     assert.match(fs.readFileSync(path.join(centralProductDir, 'contributor-guide.md'), 'utf8'), /acrgridtelemetryprod\.azurecr\.io/);
     assert.match(fs.readFileSync(path.join(simRepo, 'README.md'), 'utf8'), /Azure Kubernetes Service \(Cloud-Native Containers\)/);
 

@@ -372,6 +372,11 @@ export function extractTerraformDirectory(tfDir) {
     } else if (r.label1 === 'azurerm_servicebus_namespace') {
       const cap = extractAttr(r.body, 'capacity', ctx, true);
       if (cap) badges.push(`${cap} Messaging Unit`);
+    } else if (r.label1 === 'azurerm_redis_cache') {
+      const minTls = extractAttr(r.body, 'minimum_tls_version', ctx, true);
+      if (minTls) badges.push(`TLS ${minTls}`);
+      const zones = extractArrayAttr(r.body, 'zones', ctx);
+      if (zones.length > 1) badges.push('ZoneRedundant');
     }
 
     const subnet = resolveSubnetName(r.body);

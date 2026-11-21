@@ -190,6 +190,7 @@ export function buildCentralRepoBlocks(ir) {
   const vmNode = ir.nodes.find((n) => n.role === 'vm' || n.role === 'vmss');
   const bastionNode = ir.nodes.find((n) => n.role === 'bastion');
   const dbNode = ir.nodes.find((n) => n.role === 'postgresql');
+  const redisNode = ir.nodes.find((n) => n.role === 'redis');
   const kvNode = ir.nodes.find((n) => n.role === 'key-vault');
   const sbNode = ir.nodes.find((n) => n.role === 'service-bus');
   const lawNode = ir.nodes.find((n) => n.role === 'log-analytics');
@@ -204,7 +205,7 @@ export function buildCentralRepoBlocks(ir) {
       `| **Compute Hosting Model** | **${HOSTING_LABELS[ir.hostingModel]}** |`,
       `| **Spoke VNet & Hub Peering** | \`${ir.network.vnetName}\` (${(ir.network.addressSpace || []).join(', ')}) ${ir.network.hubPeering ? `peered to \`${ir.network.hubPeering.hubVnet}\`` : ''} |`,
       `| **Ingress Entrypoint** | \`${ingNode?.name || 'N/A'}\` (${ingNode?.displayType || 'Internal'}, \`${ingNode?.sku || 'Standard'}\`) |`,
-      `| **Stateful & Messaging Tier** | \`${dbNode?.name || 'N/A'}\` (${dbNode?.sku || ''})${sbNode ? `, \`${sbNode.name}\` (Service Bus ${sbNode.sku})` : ''} |`,
+      `| **Stateful & Messaging Tier** | \`${dbNode?.name || 'N/A'}\` (${dbNode?.sku || ''})${redisNode ? `, \`${redisNode.name}\` (Redis ${redisNode.sku})` : ''}${sbNode ? `, \`${sbNode.name}\` (Service Bus ${sbNode.sku})` : ''} |`,
       `| **Source Provenance** | \`${ir.sourceRepo}@${ir.sourceCommit}\` • IR Hash \`${ir.semanticHash.slice(0, 12)}\` |`
     ].join('\n'),
     'arch-topology-diagram': `\`\`\`mermaid\n${topologyMermaid}\n\`\`\``,
@@ -220,7 +221,7 @@ export function buildCentralRepoBlocks(ir) {
           `- **Control Plane & Cluster Access:** Private AKS cluster \`${aksNode?.name}\` (${aksNode?.badges.join(', ')}). Direct SSH and Azure Bastion are **decommissioned**; administrators authenticate exclusively with Microsoft Entra ID RBAC.`,
           `- **Workload Scaling & Node Pools:** System pool plus dedicated workload node pool \`${poolNode?.name || 'workload'}\` (\`${poolNode?.sku || 'Standard_D8ds_v5'}\`, ${poolNode?.properties?.autoscale ? `Cluster Autoscaler ${poolNode.properties.autoscale} nodes` : 'autoscaled'}) paired with Kubernetes \`${primaryWl?.replicas || 'HPA'}\`.`,
           `- **Secrets & Identity Management:** Pod-level OIDC Workload Identity mounts secrets from \`${kvNode?.name}\` via the Azure Key Vault CSI Driver—zero static credentials on nodes.`,
-          `- **Stateful & Messaging Resilience:** PostgreSQL \`${dbNode?.name}\` (\`${dbNode?.sku}\`${dbNode?.properties?.highAvailability ? `, HA: ${dbNode.properties.highAvailability}` : ''})${sbNode ? ` and Service Bus \`${sbNode.name}\` (\`${sbNode.sku}\`) isolated over Private Link` : ''}.`,
+          `- **Stateful & Messaging Resilience:** PostgreSQL \`${dbNode?.name}\` (\`${dbNode?.sku}\`${dbNode?.properties?.highAvailability ? `, HA: ${dbNode.properties.highAvailability}` : ''})${redisNode ? `, Azure Managed Redis \`${redisNode.name}\` (\`${redisNode.sku}\`)` : ''}${sbNode ? `, and Service Bus \`${sbNode.name}\` (\`${sbNode.sku}\`) isolated over Private Link` : ''}.`,
           `- **Observability:** Container logs, Prometheus scrape metrics, and control-plane diagnostics stream to Log Analytics \`${lawNode?.name}\`.`
         ].join('\n')
       : [
@@ -250,6 +251,13 @@ export function buildCentralRepoBlocks(ir) {
                 `az servicebus queue show --resource-group ${ir.service.resourceGroup} --namespace-name ${sbNode.name} --name telemetry-events --query countDetails`
               ]
             : []),
+          ...(redisNode
+            ? [
+                '',
+                `# 5. Inspect Azure Managed Redis (${redisNode.name}) TLS & Cluster Health`,
+                `az redis show --resource-group ${ir.service.resourceGroup} --name ${redisNode.name} --query "{provisioningState:provisioningState,sku:sku.name,tls:minimumTlsVersion}"`
+              ]
+            : []),
           '```'
         ].join('\n')
       : [
@@ -277,6 +285,7 @@ export function buildCentralRepoBlocks(ir) {
       `| **Gateway / Entrypoint** | \`${ingNode?.name || 'Internal'}\` (${ingNode?.displayType || 'Gateway'}) |`,
       `| **Runtime Scaling & Availability** | ${isAks ? `Kubernetes Rolling Updates (${primaryWl?.replicas || 'HPA'}) • Target SLO ${ir.service.sloAvailability}` : `Single-Region VM Host (${vmNode?.sku || 'Standard'}) • Target SLO ${ir.service.sloAvailability}`} |`,
       `| **Async Event Buffering** | ${sbNode ? `Enabled via Azure Service Bus (\`${sbNode.name}\`)` : 'Not enabled (synchronous database write path)'} |`,
+      ...(redisNode ? [`| **Hot-State Read Cache** | Sub-millisecond substation state cache via \`${redisNode.name}\` (${redisNode.sku}) |`] : []),
       `| **Exposure & Security** | ${primaryWl?.exposure || 'HTTPS 443'} |`
     ].join('\n'),
     'user-endpoints-catalog': buildEndpointsTable(ir)

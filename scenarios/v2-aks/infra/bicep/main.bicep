@@ -58,6 +58,21 @@ resource serviceBus 'Microsoft.ServiceBus/namespaces@2022-10-01-preview' = {
   sku: { name: 'Premium' }
 }
 
+resource redisCache 'Microsoft.Cache/redis@2024-03-01' = {
+  name: 'redis-grid-hotstate'
+  location: location
+  properties: {
+    sku: {
+      name: 'Premium'
+      family: 'P'
+      capacity: 1
+    }
+    enableNonSslPort: false
+    minimumTlsVersion: '1.2'
+    publicNetworkAccess: 'Disabled'
+  }
+}
+
 resource postgresDb 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
   name: 'psql-grid-telemetry'
   location: location

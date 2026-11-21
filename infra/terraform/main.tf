@@ -192,6 +192,20 @@ resource "azurerm_servicebus_namespace" "sb" {
   public_network_access_enabled = false
 }
 
+resource "azurerm_redis_cache" "hotstate" {
+  name                          = "redis-grid-hotstate"
+  location                      = azurerm_resource_group.rg.location
+  resource_group_name           = azurerm_resource_group.rg.name
+  capacity                      = 1
+  family                        = "P"
+  sku_name                      = "Premium"
+  non_ssl_port_enabled          = false
+  minimum_tls_version           = "1.2"
+  public_network_access_enabled = false
+  redis_version                 = "6"
+  zones                         = ["1", "2"]
+}
+
 resource "azurerm_postgresql_flexible_server" "db" {
   name                          = "psql-grid-telemetry"
   location                      = azurerm_resource_group.rg.location
@@ -283,6 +297,20 @@ resource "azurerm_private_endpoint" "pe_sb" {
   }
 }
 
+resource "azurerm_private_endpoint" "pe_redis" {
+  name                = "pe-redis-grid-telemetry"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  subnet_id           = azurerm_subnet.data_pe.id
+
+  private_service_connection {
+    name                           = "psc-redis-grid"
+    private_connection_resource_id = azurerm_redis_cache.hotstate.id
+    is_manual_connection           = false
+    subresource_names              = ["redisCache"]
+  }
+}
+
 resource "azurerm_role_assignment" "aks_acr_pull" {
   scope                = azurerm_container_registry.acr.id
   role_definition_name = "AcrPull"
@@ -298,5 +326,11 @@ resource "azurerm_role_assignment" "workload_kv_secrets" {
 resource "azurerm_role_assignment" "workload_sb_sender" {
   scope                = azurerm_servicebus_namespace.sb.id
   role_definition_name = "Azure Service Bus Data Sender"
+  principal_id         = azurerm_user_assigned_identity.workload_mi.principal_id
+}
+
+resource "azurerm_role_assignment" "workload_redis_contributor" {
+  scope                = azurerm_redis_cache.hotstate.id
+  role_definition_name = "Redis Cache Contributor"
   principal_id         = azurerm_user_assigned_identity.workload_mi.principal_id
 }

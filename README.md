@@ -4,19 +4,19 @@ Ingests high-frequency substation voltage, frequency, and thermal telemetry and 
 
 ## Current Hosting & Landing Zone Summary
 
-<!-- BEGIN DAC:local-hosting-summary source="gitpavleenbali/dac-workload-modernization@feat-modernize-vm-to-aks" irHash="d8565b60ca06" -->
+<!-- BEGIN DAC:local-hosting-summary source="gitpavleenbali/dac-workload-modernization@1f2251fb06ffd941c5031136bc825e2e784c89e6" irHash="d329c4700a63" -->
 | Attribute | Current Value (Extracted from IaC & Manifests) |
 | :--- | :--- |
 | **Service** | **Grid Telemetry & Dispatch Service** (`grid-telemetry-service`) |
 | **Hosting Paradigm** | **Azure Kubernetes Service (Cloud-Native Containers)** |
 | **Landing Zone / RG** | `alz-energy-ops-prod` / `rg-grid-telemetry-prod` (`westeurope`) |
 | **IaC Definitions** | `terraform`, `bicep` |
-| **Topology Semantic Hash** | `d8565b60ca065f06` |
+| **Topology Semantic Hash** | `d329c4700a63490f` |
 <!-- END DAC:local-hosting-summary -->
 
 ## Landing Zone Architecture Diagram
 
-<!-- BEGIN DAC:local-topology-diagram source="gitpavleenbali/dac-workload-modernization@feat-modernize-vm-to-aks" irHash="d8565b60ca06" -->
+<!-- BEGIN DAC:local-topology-diagram source="gitpavleenbali/dac-workload-modernization@1f2251fb06ffd941c5031136bc825e2e784c89e6" irHash="d329c4700a63" -->
 ```mermaid
 flowchart TB
   ext_clients(["External Consumers & Grid Sensors"])
@@ -35,6 +35,7 @@ flowchart TB
       subgraph sg_snet_data_pe["Subnet: snet-data-pe (10.40.2.0/24)"]
         acr_acr["Azure Container Registry (ACR)<br/>acrgridtelemetryprod (Premium)<br/>Private Endpoint"]
         service_bus_sb["Azure Service Bus<br/>sb-grid-telemetry (Premium)<br/>1 Messaging Unit • Private Endpoint"]
+        redis_hotstate[("Azure Managed Redis<br/>redis-grid-hotstate (Premium)<br/>TLS 1.2 • ZoneRedundant • Private Endpoint")]
         postgresql_db[("Azure Database for PostgreSQL<br/>psql-grid-telemetry (GP_Standard_D4ds_v5)<br/>PG v16 • HA: ZoneRedundant • Private Endpoint")]
         key_vault_kv["Azure Key Vault<br/>kv-grid-telemetry (standard)<br/>Private Endpoint"]
       end
@@ -49,8 +50,10 @@ flowchart TB
   aks_aks -->|"Private Link"| key_vault_kv
   aks_aks -.->|"Private Link + RBAC: AcrPull"| acr_acr
   aks_aks -->|"Private Link"| service_bus_sb
+  aks_aks -->|"Private Link"| redis_hotstate
   managed_identity_workload_mi -.->|"RBAC: Key Vault Secrets User"| key_vault_kv
   managed_identity_workload_mi -.->|"RBAC: Azure Service Bus Data Sender"| service_bus_sb
+  managed_identity_workload_mi -.->|"RBAC: Redis Cache Contributor"| redis_hotstate
   aks_aks -->|"Schedules Workloads"| aks_node_pool_workload
   ext_clients -->|"HTTPS (443)"| app_gateway_waf_ingress
   app_gateway_waf_ingress -->|"Ingress -> K8s Service"| aks_aks
@@ -69,6 +72,7 @@ flowchart TB
   class aks_aks compute;
   class aks_node_pool_workload compute;
   class service_bus_sb messaging;
+  class redis_hotstate data;
   class postgresql_db data;
   class key_vault_kv security;
   class log_analytics_law observability;
@@ -77,7 +81,7 @@ flowchart TB
 
 ## Build, Validate & Deploy Quickstart
 
-<!-- BEGIN DAC:local-build-deploy source="gitpavleenbali/dac-workload-modernization@feat-modernize-vm-to-aks" irHash="d8565b60ca06" -->
+<!-- BEGIN DAC:local-build-deploy source="gitpavleenbali/dac-workload-modernization@1f2251fb06ffd941c5031136bc825e2e784c89e6" irHash="d329c4700a63" -->
 ```bash
 # 1. Run application & DaC translator test suites
 npm test
@@ -96,7 +100,7 @@ kubectl apply -f deploy/k8s/
 
 ## REST API Surface
 
-<!-- BEGIN DAC:local-api-endpoints source="gitpavleenbali/dac-workload-modernization@feat-modernize-vm-to-aks" irHash="d8565b60ca06" -->
+<!-- BEGIN DAC:local-api-endpoints source="gitpavleenbali/dac-workload-modernization@1f2251fb06ffd941c5031136bc825e2e784c89e6" irHash="d329c4700a63" -->
 | HTTP Method | Endpoint Path | Capability Summary |
 | :--- | :--- | :--- |
 | `GET` | `/healthz` | Kubernetes liveness and readiness probe returning pod runtime mode and buffer depth |
