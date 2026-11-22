@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <title>Doc as Code | Interactive workshop</title>
-  <meta name="description" content="An interactive workshop on keeping existing diagrams and guides aligned with code. A proposed move from an Azure VM to AKS illustrates the review in two repositories.">
+  <meta name="description" content="A Doc as Code workshop. Follow how existing diagrams and guides are updated when a team proposes running the same application in containers on Azure Kubernetes Service instead of on virtual machines.">
   <style>
     :root {
       --paper: #f4f7fb; --white: #fff; --ink: #142744; --muted: #405775;
@@ -32,6 +32,8 @@
     .masthead .wrap { padding-block: clamp(1.4rem, 3.8vw, 3.2rem) 1.3rem; }
     .masthead-intro { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: center; gap: .85rem clamp(1.5rem, 5vw, 5rem); }
     .lead { font-size: clamp(1rem, 1.6vw, 1.17rem); color: #d6e7fc; margin: .65rem 0 0; }
+    .hero-scope { color: #d6e7fc; margin: .55rem 0 0; }
+    .masthead-intro strong { color: var(--white); }
     .hero-mark { display: block; width: min(100%, 30rem); height: auto; justify-self: end; }
     .masthead .chapters { margin-top: 1.25rem; padding-top: .85rem; border-top: 1px solid #426789; }
     .chapters { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem 1.35rem; }
@@ -485,11 +487,12 @@
       body { background: white; font-size: 10.5pt; line-height: 1.42; }
       .wrap { width: 100%; }
       .masthead .wrap { padding: .85rem 1.35rem .6rem; }
-      .masthead-intro { grid-template-columns: minmax(0, 1fr) 13rem; }
+      .masthead-intro { grid-template-columns: minmax(0, 1fr) 13rem; gap: 0 1.1rem; }
       h1 { font-size: 29pt; }
       h2 { font-size: 19pt; }
       h3 { font-size: 13pt; }
       .lead { max-width: none; font-size: 12pt; margin-block: .35rem .25rem; }
+      .hero-scope { max-width: none; margin: .25rem 0 0; }
       .chapters, .chapter-nav, .chapter-link, .toolbar, #map-inspector, .map-key, .glossary-tools, .pipeline-note,
       .tile-symbol, .tile-symbol-field, .snapshot-switch, .snapshot-state, .copy-block, .facilitator,
       .deck-rail, .deck-nav-inline, .deck-footer, .deck-qa, #file-comparison, [data-screen-only],
@@ -581,7 +584,8 @@
       <div class="masthead-intro">
         <div>
           <h1>Doc as Code</h1>
-          <p class="lead">Keep the diagrams and guides people already use aligned with reviewed code. One workshop example follows a proposed move from a virtual machine to Azure Kubernetes Service.</p>
+          <p class="lead"><strong>Workshop scenario:</strong> The Grid Telemetry application is hosted on Azure virtual machines (VMs) in the starting design. As part of modernization, the team proposes running the <strong>same application</strong> in containers on Azure Kubernetes Service (AKS).</p>
+          <p class="hero-scope"><strong>What we’ll show:</strong> The code change updates the existing diagrams and guides in the application’s repository. A separate pull request proposes matching updates to the central platform docs. Nothing is deployed to Azure.</p>
         </div>
         <img class="hero-mark" src="./assets/doc-as-code-mark.svg" alt="A stack of pages breaks into square tiles and then 0s and 1s, a visual metaphor for treating docs like code." width="480" height="190" fetchpriority="high">
       </div>
@@ -600,11 +604,11 @@
   <main class="wrap">
     <section class="facilitator" id="run-of-show" aria-labelledby="run-title" hidden>
       <h2 id="run-title">Facilitator mode · 120-minute workshop plan</h2>
-      <p>This is the two-hour Doc as Code segment of your four-hour customer workshop. Every major section now includes an interactive <strong>Previous / Next</strong> visual slide deck so you can present directly from this page without PowerPoint, plus inline verified code, diagrams, and live GitHub Actions proofs.</p>
+      <p><strong>Opening words:</strong> “Picture an application your team already runs on virtual machines. To modernize how it’s hosted, you propose running that same application in containers on Azure Kubernetes Service. We’re not deploying the app today. We’ll follow the code change and see how it updates the diagrams and guides people already use.”</p>
       <ol class="run-sheet" role="list">
         <li><b>0–20 min</b><span><a href="#cross-team-flow">Open with the two destinations.</a> Then use the <a href="#why">Why comic and five lessons</a> to explain what goes wrong when the runbook is out of date.</span></li>
         <li><b>20–45 min</b><span><a href="#what">What · Portable core and Copilot.</a> Use the comic and the <a href="#fingerprints">commit ID and hash slide</a> before the <a href="#flow">Pipeline overview</a> and <a href="#explore">Architecture map</a>.</span></li>
-        <li><b>45–65 min</b><span><a href="#how">How · VM to AKS walkthrough.</a> Open the three comic scenes, then use Next through the six stages. Compare the Azure diagrams and the eight paired repository files.</span></li>
+        <li><b>45–65 min</b><span><a href="#how">How · The same application on VMs and on AKS.</a> Open the three comic scenes, then use Next through the six stages. Compare the Azure diagrams and the eight paired repository files.</span></li>
         <li><b>65–85 min</b><span><a href="#delivery">Option 1 · Local terminal &amp; GitHub Actions.</a> Show stale check failure, local render, and live GitHub sync updating rolling Central Docs PR #1.</span></li>
         <li><b>85–100 min</b><span><a href="#option-two-local">Option 2A · Spec-driven local Copilot.</a> Run or walk through <code>dac-architecture-guardian</code> updating HPA <code>4–24 → 4–28 pods</code> from <code>.github/</code> specs.</span></li>
         <li><b>100–115 min</b><span><a href="#agentic-ci">Option 2B &amp; 2C · Keyless CI &amp; Cloud Agent.</a> Show real live OIDC runs <code>#44971666753</code> &amp; <code>#44972101526</code> + Cloud Agent Draft PR #3 (<code>ADR-003</code>).</span></li>
@@ -644,9 +648,9 @@
       <div class="deck-stage">
         <article class="deck-slide is-print-canonical" id="opening-story" role="tabpanel" aria-labelledby="why-deck-tab-intro">
           <header class="deck-slide-head">
-            <h3>The app is moving. The runbook missed the memo.</h3>
+            <h3>The hosting plan changes. The runbook missed the memo.</h3>
           </header>
-          <p class="deck-lead"><strong>Workshop example:</strong> A team proposes moving the same app from a virtual machine (VM) to Azure Kubernetes Service (AKS), where Kubernetes manages containers. The topic is how the documentation follows the change, not whether to migrate or how to deploy AKS.</p>
+          <p class="deck-lead">Azure virtual machines (VMs) host the Grid Telemetry application in the starting design. The team proposes running the same application in containers on Azure Kubernetes Service (AKS). What if the guide still points to the VM?</p>
           <figure class="comic" aria-label="Why, What, and How in three illustrated scenes">
             <ol role="list">
               <li><button class="comic-panel" type="button" data-story-detail="intro-why" data-story-title="Why · The old map" aria-describedby="comic-why-meaning" disabled>
@@ -1755,8 +1759,8 @@
     </section>
 
     <section id="how" aria-labelledby="how-title">
-      <h2 id="how-title">How Doc as Code works · The VM-to-AKS example</h2>
-      <p class="section-intro">In this workshop scenario, the same Grid Telemetry app would move from an Azure virtual machine to Azure Kubernetes Service. The before and after are two configurations in Git: the VM baseline and the proposed AKS design.</p>
+      <h2 id="how-title">How Doc as Code works · Modernizing application hosting</h2>
+      <p class="section-intro">The starting design in Git shows the Grid Telemetry application hosted on Azure virtual machines (VMs). The proposed design would run the same application in containers on Azure Kubernetes Service (AKS).</p>
       <p><strong>What we’re following:</strong> A code change becomes updates to the existing diagram and guides, first alongside the workload code and then in a separate central docs review. These updates are not proof of a deployment, working connections, or a recommendation to choose AKS.</p>
       <nav class="chapter-nav" aria-label="Modernization walkthrough">
         <a href="#topology-comparison">Compare the Azure topologies</a>
@@ -1790,7 +1794,7 @@
           <header class="deck-slide-head">
             <h3>The app changes hosts. The guides keep their place.</h3>
           </header>
-          <p class="deck-lead">Grid Telemetry is still the same service. In the proposed design, Azure Kubernetes Service (AKS) runs and scales the containers instead of a single virtual machine running the app as a Linux service.</p>
+          <p class="deck-lead">The VM guide tells the operator how to check the Linux service. The proposed AKS guide tells them how to check the application’s rollout and containers. The application is the same, but the instructions change.</p>
           <figure class="comic comic-sequence" id="how-story" data-deck-anchor aria-label="How the change reaches the existing guides, in three scenes">
             <ol role="list">
               <li><button class="comic-panel" type="button" data-story-detail="how-change" data-story-title="1 · Change the source" aria-describedby="comic-how-change-meaning" disabled>
@@ -1798,7 +1802,7 @@
                 <span class="comic-caption">
                   <strong>1 · Change the source</strong>
                   <span class="comic-line">“Same app. Different host.”</span>
-                  <span class="comic-meaning" id="comic-how-change-meaning">The proposal replaces the VM configuration with a Kubernetes deployment.</span>
+                  <span class="comic-meaning" id="comic-how-change-meaning">The code now describes containers on AKS instead of an application service on a VM.</span>
                   <span class="comic-more" aria-hidden="true" data-screen-only hidden>+</span>
                 </span>
               </button></li>
