@@ -12,7 +12,10 @@
     "dac:render": "node packages/dac-translator/bin/dac-translator.mjs render",
     "dac:verify": "node packages/dac-translator/bin/dac-translator.mjs verify",
     "dac:diff": "node packages/dac-translator/bin/dac-translator.mjs diff",
-    "dac:sync-pr": "node packages/dac-translator/bin/dac-translator.mjs sync-central-pr"
+    "dac:sync-pr": "node packages/dac-translator/bin/dac-translator.mjs sync-central-pr",
+    "demo:option1:prepare": "node scripts/doc-as-code/option1-demo.mjs prepare",
+    "demo:option1:render": "node scripts/doc-as-code/option1-demo.mjs render",
+    "demo:option1:clean": "node scripts/doc-as-code/option1-demo.mjs clean"
   },
   "engines": {
     "node": ">=20.0.0"

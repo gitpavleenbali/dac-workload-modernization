@@ -6300,16 +6300,20 @@ index 5d94953..74071b4 100644
       <div class="workflow-lanes">
         <div>
           <h3>Local terminal · Regenerate and verify</h3>
-          <p class="command-label">From the workload repository root, with Node.js 20+:</p>
+          <p class="command-label">From the workload repository root, paste one command at a time:</p>
           <div class="command-frame">
-            <pre><code id="local-render-commands">npm run dac:render
-npm run dac:verify
-npm test
-git diff -- README.md docs/architecture.md</code></pre>
+            <pre><code id="local-render-commands">npm run demo:option1:prepare
+npm run demo:option1:render
+npm run demo:option1:clean</code></pre>
             <button class="control copy-block" type="button" data-copy="local-render-commands" aria-describedby="local-render-result" hidden>Copy commands</button>
             <output id="local-render-result" aria-live="polite"></output>
           </div>
-          <p>The renderer updates the named <code>BEGIN DAC</code> / <code>END DAC</code> sections. The verifier checks for stale generated content. Neither command pushes or deploys.</p>
+          <ol class="workflow-steps">
+            <li><strong>Prepare:</strong> creates the disposable checkout and prints the expected stale-doc failure.</li>
+            <li><strong>Render:</strong> updates, verifies, tests, and prints exactly which files to open in VS Code.</li>
+            <li><strong>Clean:</strong> removes only the disposable checkout after checking for unexpected files.</li>
+          </ol>
+          <p>These commands do not push, publish, merge, or deploy anything.</p>
           <!-- BEGIN WORKSHOP:replay -->
 <div class="record">
   <h4>Local VM-to-AKS replay</h4>
