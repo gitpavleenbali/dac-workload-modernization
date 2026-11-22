@@ -1,0 +1,113 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sa-grid-telemetry-workload
+  namespace: grid-telemetry
+  annotations:
+    azure.workload.identity/client-id: "00000000-0000-0000-0000-000000000099"
+  labels:
+    azure.workload.identity/use: "true"
+---
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: kv-grid-telemetry-csi
+  namespace: grid-telemetry
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    clientID: "00000000-0000-0000-0000-000000000099"
+    keyvaultName: "kv-grid-telemetry"
+    tenantId: "00000000-0000-0000-0000-000000000002"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grid-telemetry-api
+  namespace: grid-telemetry
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: grid-telemetry-api
+  template:
+    metadata:
+      labels:
+        app: grid-telemetry-api
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: sa-grid-telemetry-workload
+      containers:
+        - name: api
+          image: acrgridtelemetryprod.azurecr.io/grid-telemetry-service:2.2.0
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: secrets-store
+              mountPath: "/mnt/secrets-store"
+              readOnly: true
+      volumes:
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "kv-grid-telemetry-csi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grid-telemetry-svc
+  namespace: grid-telemetry
+spec:
+  selector:
+    app: grid-telemetry-api
+  ports:
+    - port: 80
+      targetPort: 8080
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: grid-telemetry-hpa
+  namespace: grid-telemetry
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: grid-telemetry-api
+  minReplicas: 4
+  maxReplicas: 24
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grid-telemetry-ingress
+  namespace: grid-telemetry
+spec:
+  ingressClassName: azure-application-gateway
+  rules:
+    - host: telemetry.grid.internal
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: grid-telemetry-svc
+                port:
+                  number: 80

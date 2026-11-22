@@ -23,18 +23,18 @@ resource "azurerm_virtual_network_peering" "spoke_to_hub" {
   allow_virtual_network_access = true
 }
 
-resource "azurerm_subnet" "vm_app" {
-  name                 = "snet-vm-app"
+resource "azurerm_subnet" "aks_nodes" {
+  name                 = "snet-aks-nodes"
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.spoke.name
-  address_prefixes     = ["10.40.1.0/24"]
+  address_prefixes     = ["10.40.4.0/22"]
 }
 
-resource "azurerm_subnet" "bastion" {
-  name                 = "AzureBastionSubnet"
+resource "azurerm_subnet" "ingress_waf" {
+  name                 = "snet-ingress-waf"
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.spoke.name
-  address_prefixes     = ["10.40.0.0/26"]
+  address_prefixes     = ["10.40.10.0/24"]
 }
 
 resource "azurerm_subnet" "data_pe" {
@@ -44,91 +44,166 @@ resource "azurerm_subnet" "data_pe" {
   address_prefixes     = ["10.40.2.0/24"]
 }
 
-resource "azurerm_network_security_group" "vm_nsg" {
-  name                = "nsg-vm-grid-app"
+resource "azurerm_network_security_group" "aks_nsg" {
+  name                = "nsg-aks-grid-nodes"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 }
 
-resource "azurerm_subnet_network_security_group_association" "vm_nsg_assoc" {
-  subnet_id                 = azurerm_subnet.vm_app.id
-  network_security_group_id = azurerm_network_security_group.vm_nsg.id
+resource "azurerm_subnet_network_security_group_association" "aks_nsg_assoc" {
+  subnet_id                 = azurerm_subnet.aks_nodes.id
+  network_security_group_id = azurerm_network_security_group.aks_nsg.id
 }
 
-resource "azurerm_public_ip" "bastion_pip" {
-  name                = "pip-bas-grid-ops"
+resource "azurerm_public_ip" "agw_pip" {
+  name                = "pip-agw-grid-waf"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   allocation_method   = "Static"
   sku                 = "Standard"
 }
 
-resource "azurerm_bastion_host" "ops_bastion" {
-  name                = "bas-grid-ops"
+resource "azurerm_application_gateway" "waf_ingress" {
+  name                = "agw-grid-waf"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  sku                 = "Standard"
 
-  ip_configuration {
-    name                 = "bastion-ipcfg"
-    subnet_id            = azurerm_subnet.bastion.id
-    public_ip_address_id = azurerm_public_ip.bastion_pip.id
+  sku {
+    name     = "WAF_v2"
+    tier     = "WAF_v2"
+    capacity = 2
   }
-}
 
-resource "azurerm_lb" "ingress_lb" {
-  name                = "lb-grid-telemetry"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  sku                 = "Standard"
+  gateway_ip_configuration {
+    name      = "agw-ipcfg"
+    subnet_id = azurerm_subnet.ingress_waf.id
+  }
+
+  frontend_port {
+    name = "https-443"
+    port = 443
+  }
 
   frontend_ip_configuration {
-    name                          = "internal-frontend"
-    subnet_id                     = azurerm_subnet.vm_app.id
-    private_ip_address_allocation = "Dynamic"
+    name                 = "agw-public-fe"
+    public_ip_address_id = azurerm_public_ip.agw_pip.id
+  }
+
+  backend_address_pool {
+    name = "aks-ingress-pool"
+  }
+
+  backend_http_settings {
+    name                  = "http-8080"
+    cookie_based_affinity = "Disabled"
+    port                  = 8080
+    protocol              = "Http"
+    request_timeout       = 30
+  }
+
+  http_listener {
+    name                           = "listener-443"
+    frontend_ip_configuration_name = "agw-public-fe"
+    frontend_port_name             = "https-443"
+    protocol                       = "Http"
+  }
+
+  request_routing_rule {
+    name                       = "route-to-aks"
+    priority                   = 100
+    rule_type                  = "Basic"
+    http_listener_name         = "listener-443"
+    backend_address_pool_name  = "aks-ingress-pool"
+    backend_http_settings_name = "http-8080"
   }
 }
 
-resource "azurerm_network_interface" "vm_nic" {
-  name                = "nic-vm-grid-telemetry-01"
+resource "azurerm_container_registry" "acr" {
+  name                          = "acrgridtelemetryprod"
+  location                      = azurerm_resource_group.rg.location
+  resource_group_name           = azurerm_resource_group.rg.name
+  sku                           = "Premium"
+  admin_enabled                 = false
+  public_network_access_enabled = false
+}
+
+resource "azurerm_user_assigned_identity" "workload_mi" {
+  name                = "id-grid-telemetry-workload"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-
-  ip_configuration {
-    name                          = "internal"
-    subnet_id                     = azurerm_subnet.vm_app.id
-    private_ip_address_allocation = "Dynamic"
-  }
 }
 
-resource "azurerm_linux_virtual_machine" "app_vm" {
-  name                  = "vm-grid-telemetry-01"
-  location              = azurerm_resource_group.rg.location
-  resource_group_name   = azurerm_resource_group.rg.name
-  size                  = "Standard_D4s_v5"
-  admin_username        = "azureops"
-  network_interface_ids = [azurerm_network_interface.vm_nic.id]
+resource "azurerm_kubernetes_cluster" "aks" {
+  name                      = "aks-grid-telemetry-prod"
+  location                  = azurerm_resource_group.rg.location
+  resource_group_name       = azurerm_resource_group.rg.name
+  dns_prefix                = "aks-grid-telemetry"
+  kubernetes_version        = "1.32"
+  sku_tier                  = "Standard"
+  private_cluster_enabled   = true
+  oidc_issuer_enabled       = true
+  workload_identity_enabled = true
 
-  admin_ssh_key {
-    username   = "azureops"
-    public_key = var.vm_admin_ssh_public_key
-  }
-
-  os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Premium_LRS"
-  }
-
-  source_image_reference {
-    publisher = "Canonical"
-    offer     = "0001-com-ubuntu-server-jammy"
-    sku       = "22_04-lts-gen2"
-    version   = "latest"
+  default_node_pool {
+    name                 = "system"
+    vm_size              = "Standard_D4ds_v5"
+    vnet_subnet_id       = azurerm_subnet.aks_nodes.id
+    auto_scaling_enabled = true
+    min_count            = 2
+    max_count            = 4
+    zones                = ["1", "2", "3"]
   }
 
   identity {
     type = "SystemAssigned"
   }
+
+  network_profile {
+    network_plugin      = "azure"
+    network_plugin_mode = "overlay"
+    network_policy      = "cilium"
+    service_cidr        = "10.240.0.0/16"
+    dns_service_ip      = "10.240.0.10"
+  }
+
+  key_vault_secrets_provider {
+    secret_rotation_enabled = true
+  }
+}
+
+resource "azurerm_kubernetes_cluster_node_pool" "workload" {
+  name                  = "workload"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.aks.id
+  vm_size               = "Standard_D16ds_v5"
+  vnet_subnet_id        = azurerm_subnet.aks_nodes.id
+  auto_scaling_enabled  = true
+  min_count             = 4
+  max_count             = 20
+  zones                 = ["1", "2", "3"]
+}
+
+resource "azurerm_servicebus_namespace" "sb" {
+  name                          = "sb-grid-telemetry"
+  location                      = azurerm_resource_group.rg.location
+  resource_group_name           = azurerm_resource_group.rg.name
+  sku                           = "Premium"
+  capacity                      = 2
+  premium_messaging_partitions  = 1
+  public_network_access_enabled = false
+}
+
+resource "azurerm_redis_cache" "hotstate" {
+  name                          = "redis-grid-hotstate"
+  location                      = azurerm_resource_group.rg.location
+  resource_group_name           = azurerm_resource_group.rg.name
+  capacity                      = 1
+  family                        = "P"
+  sku_name                      = "Premium"
+  non_ssl_port_enabled          = false
+  minimum_tls_version           = "1.2"
+  public_network_access_enabled = false
+  redis_version                 = "6"
+  zones                         = ["1", "2"]
 }
 
 resource "azurerm_postgresql_flexible_server" "db" {
@@ -137,9 +212,14 @@ resource "azurerm_postgresql_flexible_server" "db" {
   resource_group_name           = azurerm_resource_group.rg.name
   version                       = "16"
   sku_name                      = var.postgres_sku
-  storage_mb                    = 65536
+  storage_mb                    = 131072
   public_network_access_enabled = false
   zone                          = "1"
+
+  high_availability {
+    mode                      = "ZoneRedundant"
+    standby_availability_zone = "2"
+  }
 }
 
 resource "azurerm_key_vault" "kv" {
@@ -189,8 +269,68 @@ resource "azurerm_private_endpoint" "pe_kv" {
   }
 }
 
-resource "azurerm_role_assignment" "vm_kv_secrets" {
+resource "azurerm_private_endpoint" "pe_acr" {
+  name                = "pe-acr-grid-telemetry"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  subnet_id           = azurerm_subnet.data_pe.id
+
+  private_service_connection {
+    name                           = "psc-acr-grid"
+    private_connection_resource_id = azurerm_container_registry.acr.id
+    is_manual_connection           = false
+    subresource_names              = ["registry"]
+  }
+}
+
+resource "azurerm_private_endpoint" "pe_sb" {
+  name                = "pe-sb-grid-telemetry"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  subnet_id           = azurerm_subnet.data_pe.id
+
+  private_service_connection {
+    name                           = "psc-sb-grid"
+    private_connection_resource_id = azurerm_servicebus_namespace.sb.id
+    is_manual_connection           = false
+    subresource_names              = ["namespace"]
+  }
+}
+
+resource "azurerm_private_endpoint" "pe_redis" {
+  name                = "pe-redis-grid-telemetry"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  subnet_id           = azurerm_subnet.data_pe.id
+
+  private_service_connection {
+    name                           = "psc-redis-grid"
+    private_connection_resource_id = azurerm_redis_cache.hotstate.id
+    is_manual_connection           = false
+    subresource_names              = ["redisCache"]
+  }
+}
+
+resource "azurerm_role_assignment" "aks_acr_pull" {
+  scope                = azurerm_container_registry.acr.id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
+}
+
+resource "azurerm_role_assignment" "workload_kv_secrets" {
   scope                = azurerm_key_vault.kv.id
   role_definition_name = "Key Vault Secrets User"
-  principal_id         = azurerm_linux_virtual_machine.app_vm.identity[0].principal_id
+  principal_id         = azurerm_user_assigned_identity.workload_mi.principal_id
+}
+
+resource "azurerm_role_assignment" "workload_sb_sender" {
+  scope                = azurerm_servicebus_namespace.sb.id
+  role_definition_name = "Azure Service Bus Data Sender"
+  principal_id         = azurerm_user_assigned_identity.workload_mi.principal_id
+}
+
+resource "azurerm_role_assignment" "workload_redis_contributor" {
+  scope                = azurerm_redis_cache.hotstate.id
+  role_definition_name = "Redis Cache Contributor"
+  principal_id         = azurerm_user_assigned_identity.workload_mi.principal_id
 }

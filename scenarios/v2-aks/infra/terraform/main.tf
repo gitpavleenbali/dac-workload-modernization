@@ -138,7 +138,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
   location                  = azurerm_resource_group.rg.location
   resource_group_name       = azurerm_resource_group.rg.name
   dns_prefix                = "aks-grid-telemetry"
-  kubernetes_version        = "1.31"
+  kubernetes_version        = "1.32"
   sku_tier                  = "Standard"
   private_cluster_enabled   = true
   oidc_issuer_enabled       = true
@@ -174,11 +174,11 @@ resource "azurerm_kubernetes_cluster" "aks" {
 resource "azurerm_kubernetes_cluster_node_pool" "workload" {
   name                  = "workload"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.aks.id
-  vm_size               = "Standard_D8ds_v5"
+  vm_size               = "Standard_D16ds_v5"
   vnet_subnet_id        = azurerm_subnet.aks_nodes.id
   auto_scaling_enabled  = true
-  min_count             = 3
-  max_count             = 12
+  min_count             = 4
+  max_count             = 20
   zones                 = ["1", "2", "3"]
 }
 
@@ -187,9 +187,23 @@ resource "azurerm_servicebus_namespace" "sb" {
   location                      = azurerm_resource_group.rg.location
   resource_group_name           = azurerm_resource_group.rg.name
   sku                           = "Premium"
-  capacity                      = 1
+  capacity                      = 2
   premium_messaging_partitions  = 1
   public_network_access_enabled = false
+}
+
+resource "azurerm_redis_cache" "hotstate" {
+  name                          = "redis-grid-hotstate"
+  location                      = azurerm_resource_group.rg.location
+  resource_group_name           = azurerm_resource_group.rg.name
+  capacity                      = 1
+  family                        = "P"
+  sku_name                      = "Premium"
+  non_ssl_port_enabled          = false
+  minimum_tls_version           = "1.2"
+  public_network_access_enabled = false
+  redis_version                 = "6"
+  zones                         = ["1", "2"]
 }
 
 resource "azurerm_postgresql_flexible_server" "db" {
@@ -283,6 +297,20 @@ resource "azurerm_private_endpoint" "pe_sb" {
   }
 }
 
+resource "azurerm_private_endpoint" "pe_redis" {
+  name                = "pe-redis-grid-telemetry"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  subnet_id           = azurerm_subnet.data_pe.id
+
+  private_service_connection {
+    name                           = "psc-redis-grid"
+    private_connection_resource_id = azurerm_redis_cache.hotstate.id
+    is_manual_connection           = false
+    subresource_names              = ["redisCache"]
+  }
+}
+
 resource "azurerm_role_assignment" "aks_acr_pull" {
   scope                = azurerm_container_registry.acr.id
   role_definition_name = "AcrPull"
@@ -298,5 +326,11 @@ resource "azurerm_role_assignment" "workload_kv_secrets" {
 resource "azurerm_role_assignment" "workload_sb_sender" {
   scope                = azurerm_servicebus_namespace.sb.id
   role_definition_name = "Azure Service Bus Data Sender"
+  principal_id         = azurerm_user_assigned_identity.workload_mi.principal_id
+}
+
+resource "azurerm_role_assignment" "workload_redis_contributor" {
+  scope                = azurerm_redis_cache.hotstate.id
+  role_definition_name = "Redis Cache Contributor"
   principal_id         = azurerm_user_assigned_identity.workload_mi.principal_id
 }

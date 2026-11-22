@@ -30,7 +30,9 @@ resource spokeVnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
 resource wafGateway 'Microsoft.Network/applicationGateways@2024-01-01' = {
   name: 'agw-grid-waf'
   location: location
-  sku: { name: 'WAF_v2' }
+  properties: {
+    sku: { name: 'WAF_v2', tier: 'WAF_v2', capacity: 2 }
+  }
 }
 
 resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
@@ -56,17 +58,34 @@ resource serviceBus 'Microsoft.ServiceBus/namespaces@2022-10-01-preview' = {
   sku: { name: 'Premium' }
 }
 
+resource redisCache 'Microsoft.Cache/redis@2024-03-01' = {
+  name: 'redis-grid-hotstate'
+  location: location
+  properties: {
+    sku: {
+      name: 'Premium'
+      family: 'P'
+      capacity: 1
+    }
+    enableNonSslPort: false
+    minimumTlsVersion: '1.2'
+    publicNetworkAccess: 'Disabled'
+  }
+}
+
 resource postgresDb 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
   name: 'psql-grid-telemetry'
   location: location
-  sku: { name: postgresSku }
+  sku: { name: postgresSku, tier: 'GeneralPurpose' }
 }
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: 'kv-grid-telemetry'
   location: location
   properties: {
+    tenantId: subscription().tenantId
     sku: { family: 'A', name: 'standard' }
+    enableRbacAuthorization: true
   }
 }
 

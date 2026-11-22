@@ -192,8 +192,13 @@ export function renderRuntimeAndDeliveryMermaid(ir) {
   }
 
   const dbNode = ir.nodes.find((n) => n.role === 'postgresql');
+  const redisNode = ir.nodes.find((n) => n.role === 'redis');
   const kvNode = ir.nodes.find((n) => n.role === 'key-vault');
   const sbNode = ir.nodes.find((n) => n.role === 'service-bus');
+  if (redisNode) {
+    lines.push(`    rt_redis[("${safeMermaidLabel(`${redisNode.name}<br/>Redis ${redisNode.sku}`)}")]`);
+    lines.push('    rt_compute -->|"TLS :6380 Hot-State"| rt_redis');
+  }
   if (dbNode) {
     lines.push(`    rt_db[("${safeMermaidLabel(`${dbNode.name}<br/>${dbNode.sku}`)}")]`);
     lines.push('    rt_compute -->|"Private Link :5432"| rt_db');

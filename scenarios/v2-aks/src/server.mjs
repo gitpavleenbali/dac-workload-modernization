@@ -119,6 +119,31 @@ export function createTelemetryServer(options = {}) {
       return;
     }
 
+    if (req.method === 'POST' && url.pathname === '/v1/dispatch/curtailment') {
+      let raw = '';
+      req.on('data', (chunk) => {
+        raw += chunk;
+      });
+      req.on('end', () => {
+        try {
+          const payload = JSON.parse(raw || '{}');
+          if (!payload.substationId || typeof payload.targetReductionMw !== 'number') {
+            return sendJson(res, 400, { error: 'Required fields: substationId, targetReductionMw (number)' });
+          }
+          return sendJson(res, 202, {
+            dispatched: true,
+            commandId: `curtail-${payload.substationId}-${Date.now()}`,
+            substationId: payload.substationId,
+            targetReductionMw: payload.targetReductionMw,
+            routedVia: 'sb-grid-telemetry/dispatch-commands'
+          });
+        } catch {
+          return sendJson(res, 400, { error: 'Invalid JSON request body' });
+        }
+      });
+      return;
+    }
+
     return sendJson(res, 404, { error: 'Not Found' });
   });
 }

@@ -6,16 +6,21 @@
  * to deterministic structured output when offline or in air-gapped CI.
  */
 export async function generateGroundedAiNarrative(delta, afterIR, options = {}) {
-  const token = options.token || process.env.MODELS_TOKEN || process.env.GITHUB_TOKEN;
   const endpoint =
     options.endpoint ||
     process.env.AZURE_OPENAI_CHAT_COMPLETIONS_URL ||
-    'https://models.github.ai/inference/chat/completions';
-  const model = options.model || process.env.DAC_AI_MODEL || 'openai/gpt-4.1-mini';
+    process.env.OPENAI_CHAT_COMPLETIONS_URL ||
+    '';
+  const token =
+    options.token ||
+    process.env.AZURE_OPENAI_API_KEY ||
+    process.env.MODELS_TOKEN ||
+    '';
+  const model = options.model || process.env.DAC_AI_MODEL || 'gpt-4.1-mini';
 
-  if (!token || options.disableNetwork) {
+  if (!endpoint || !token || options.disableNetwork) {
     return {
-      mode: 'deterministic-fallback',
+      mode: 'deterministic-canonical-ir (Foundry AI optional)',
       narrative: buildDeterministicExecutiveBrief(delta, afterIR)
     };
   }
@@ -60,7 +65,14 @@ export async function generateGroundedAiNarrative(delta, afterIR, options = {}) 
 
     if (!resp.ok) {
       return {
-        mode: `deterministic-fallback (HTTP ${resp.status})`,
+        mode: `deterministic-canonical-ir (HTTP ${resp.status})`,
+        narrative: buildDeterministicExecutiveBrief(delta, afterIR)
+      };
+    }
+    const contentType = resp.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      return {
+        mode: 'deterministic-canonical-ir (non-JSON endpoint)',
         narrative: buildDeterministicExecutiveBrief(delta, afterIR)
       };
     }

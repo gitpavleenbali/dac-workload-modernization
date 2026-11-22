@@ -50,14 +50,16 @@ resource appVm 'Microsoft.Compute/virtualMachines@2024-03-01' = {
 resource postgresDb 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
   name: 'psql-grid-telemetry'
   location: location
-  sku: { name: postgresSku }
+  sku: { name: postgresSku, tier: 'GeneralPurpose' }
 }
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: 'kv-grid-telemetry'
   location: location
   properties: {
+    tenantId: subscription().tenantId
     sku: { family: 'A', name: 'standard' }
+    enableRbacAuthorization: true
   }
 }
 

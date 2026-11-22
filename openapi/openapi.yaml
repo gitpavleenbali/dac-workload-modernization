@@ -1,18 +1,24 @@
 openapi: 3.1.0
 info:
   title: Grid Telemetry & Dispatch Service API
-  version: 1.0.0
-  description: Substation telemetry ingestion and grid frequency health API.
+  version: 2.2.0
+  description: Cloud-native AKS substation telemetry ingestion, Service Bus batch streaming, and automated dispatch curtailment API.
 paths:
   /healthz:
     get:
-      summary: Liveness and readiness probe returning active runtime mode and buffer depth
+      summary: Kubernetes liveness and readiness probe returning pod runtime mode and buffer depth
   /v1/grid/status:
     get:
       summary: Retrieve current regional grid nominal frequency, active frequency-deviation alerts, and latest substation reading
   /v1/telemetry:
     post:
-      summary: Idempotently ingest substation voltage and frequency telemetry reading
+      summary: Idempotently ingest single substation voltage and frequency telemetry reading
+  /v1/telemetry/batch:
+    post:
+      summary: Asynchronously enqueue high-frequency substation telemetry batch via Azure Service Bus Premium
+  /v1/dispatch/curtailment:
+    post:
+      summary: Issue automated substation load-curtailment dispatch command during grid frequency excursion
   /v1/telemetry/recent:
     get:
       summary: List most recent 25 telemetry readings in the active window

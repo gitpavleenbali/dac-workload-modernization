@@ -10,19 +10,19 @@ The deployment quickstart illustrates the declared hosting design. The workshop 
 
 ## Current Hosting & Landing Zone Summary
 
-<!-- BEGIN DAC:local-hosting-summary source="gitpavleenbali/dac-workload-modernization@v1.0.0-vm-baseline" irHash="e8147f08f46c" -->
+<!-- BEGIN DAC:local-hosting-summary source="gitpavleenbali/dac-workload-modernization@a77df6d1846443937999c73a3fe23eb50c8be9d6" irHash="9d0955415321" -->
 | Attribute | Current Value (Extracted from IaC & Manifests) |
 | :--- | :--- |
 | **Service** | **Grid Telemetry & Dispatch Service** (`grid-telemetry-service`) |
-| **Hosting Paradigm** | **Azure Virtual Machines (IaaS)** |
+| **Hosting Paradigm** | **Azure Kubernetes Service (Cloud-Native Containers)** |
 | **Landing Zone / RG** | `alz-energy-ops-prod` / `rg-grid-telemetry-prod` (`westeurope`) |
 | **IaC Definitions** | `terraform`, `bicep` |
-| **Topology Semantic Hash** | `e8147f08f46cc101` |
+| **Topology Semantic Hash** | `9d095541532117cb` |
 <!-- END DAC:local-hosting-summary -->
 
 ## Landing Zone Architecture Diagram
 
-<!-- BEGIN DAC:local-topology-diagram source="gitpavleenbali/dac-workload-modernization@v1.0.0-vm-baseline" irHash="e8147f08f46c" -->
+<!-- BEGIN DAC:local-topology-diagram source="gitpavleenbali/dac-workload-modernization@a77df6d1846443937999c73a3fe23eb50c8be9d6" irHash="9d0955415321" -->
 ```mermaid
 flowchart TB
   ext_clients(["External Consumers & Grid Sensors"])
@@ -31,29 +31,40 @@ flowchart TB
   end
   subgraph sg_rg["Landing Zone: alz-energy-ops-prod (rg-grid-telemetry-prod - westeurope)"]
     subgraph sg_vnet["Spoke VNet: vnet-grid-prod (10.40.0.0/16)"]
-      subgraph sg_snet_vm_app["Subnet: snet-vm-app (10.40.1.0/24 • NSG: nsg-vm-grid-app)"]
-        load_balancer_ingress_lb["Azure Standard Load Balancer<br/>lb-grid-telemetry (Standard)"]
-        vm_app_vm["Azure Linux VM<br/>vm-grid-telemetry-01 (Standard_D4s_v5)<br/>System Managed Identity"]
+      subgraph sg_snet_aks_nodes["Subnet: snet-aks-nodes (10.40.4.0/22 • NSG: nsg-aks-grid-nodes)"]
+        aks_aks["Azure Kubernetes Service (AKS)<br/>aks-grid-telemetry-prod (Standard (Standard_D4ds_v5))<br/>K8s 1.32 • Workload Identity • Private Cluster"]
+        aks_node_pool_workload["AKS Workload Node Pool<br/>workload (Standard_D16ds_v5)<br/>Autoscale 4-20"]
       end
-      subgraph sg_AzureBastionSubnet["Subnet: AzureBastionSubnet (10.40.0.0/26)"]
-        bastion_ops_bastion["Azure Bastion<br/>bas-grid-ops (Standard)"]
+      subgraph sg_snet_ingress_waf["Subnet: snet-ingress-waf (10.40.10.0/24)"]
+        app_gateway_waf_ingress["Azure Application Gateway (WAF v2)<br/>agw-grid-waf (WAF_v2)<br/>TLS / Layer-7 Ingress"]
       end
       subgraph sg_snet_data_pe["Subnet: snet-data-pe (10.40.2.0/24)"]
-        postgresql_db[("Azure Database for PostgreSQL<br/>psql-grid-telemetry (GP_Standard_D2ds_v5)<br/>PG v16 • Private Endpoint")]
+        acr_acr["Azure Container Registry (ACR)<br/>acrgridtelemetryprod (Premium)<br/>Private Endpoint"]
+        service_bus_sb["Azure Service Bus<br/>sb-grid-telemetry (Premium)<br/>2 Messaging Units • Private Endpoint"]
+        redis_hotstate[("Azure Managed Redis<br/>redis-grid-hotstate (Premium)<br/>TLS 1.2 • ZoneRedundant • Private Endpoint")]
+        postgresql_db[("Azure Database for PostgreSQL<br/>psql-grid-telemetry (GP_Standard_D4ds_v5)<br/>PG v16 • HA: ZoneRedundant • Private Endpoint")]
         key_vault_kv["Azure Key Vault<br/>kv-grid-telemetry (standard)<br/>Private Endpoint"]
       end
     end
     subgraph sg_platform["Control Plane, Identity & Observability"]
+      managed_identity_workload_mi["User-Assigned Managed Identity<br/>id-grid-telemetry-workload (Standard)"]
       log_analytics_law["Log Analytics Workspace<br/>law-grid-ops (PerGB2018)"]
     end
   end
-  vm_app_vm -.->|"VNet Peering / Egress"| hub_vnet
-  vm_app_vm -->|"Private Link"| postgresql_db
-  vm_app_vm -.->|"Private Link + RBAC: Key Vault Secrets User"| key_vault_kv
-  ext_clients -->|"HTTPS (443)"| load_balancer_ingress_lb
-  load_balancer_ingress_lb -->|"Backend Pool (8080)"| vm_app_vm
-  bastion_ops_bastion -->|"Admin SSH (22)"| vm_app_vm
-  vm_app_vm -.->|"Azure Monitor Agent (VM Insights)"| log_analytics_law
+  aks_aks -.->|"VNet Peering / Egress"| hub_vnet
+  aks_aks -->|"Private Link"| postgresql_db
+  aks_aks -->|"Private Link"| key_vault_kv
+  aks_aks -.->|"Private Link + RBAC: AcrPull"| acr_acr
+  aks_aks -->|"Private Link"| service_bus_sb
+  aks_aks -->|"Private Link"| redis_hotstate
+  managed_identity_workload_mi -.->|"RBAC: Key Vault Secrets User"| key_vault_kv
+  managed_identity_workload_mi -.->|"RBAC: Azure Service Bus Data Sender"| service_bus_sb
+  managed_identity_workload_mi -.->|"RBAC: Redis Cache Contributor"| redis_hotstate
+  aks_aks -->|"Schedules Workloads"| aks_node_pool_workload
+  ext_clients -->|"HTTPS (443)"| app_gateway_waf_ingress
+  app_gateway_waf_ingress -->|"Ingress -> K8s Service"| aks_aks
+  aks_aks -.->|"OIDC Workload Identity"| managed_identity_workload_mi
+  aks_aks -.->|"Container Insights & Prometheus"| log_analytics_law
   classDef compute fill:#e8f4fd,stroke:#0078d4,stroke-width:2px,color:#0f172a;
   classDef ingress fill:#eef2ff,stroke:#4f46e5,stroke-width:2px,color:#0f172a;
   classDef containers fill:#f0fdf4,stroke:#15803d,stroke-width:2px,color:#0f172a;
@@ -61,9 +72,13 @@ flowchart TB
   classDef messaging fill:#fdf4ff,stroke:#a21caf,stroke-width:2px,color:#0f172a;
   classDef security fill:#fef2f2,stroke:#dc2626,stroke-width:1.5px,color:#0f172a;
   classDef observability fill:#f1f5f9,stroke:#475569,stroke-width:1.5px,color:#0f172a;
-  class bastion_ops_bastion security;
-  class load_balancer_ingress_lb ingress;
-  class vm_app_vm compute;
+  class app_gateway_waf_ingress ingress;
+  class acr_acr containers;
+  class managed_identity_workload_mi security;
+  class aks_aks compute;
+  class aks_node_pool_workload compute;
+  class service_bus_sb messaging;
+  class redis_hotstate data;
   class postgresql_db data;
   class key_vault_kv security;
   class log_analytics_law observability;
@@ -72,28 +87,33 @@ flowchart TB
 
 ## Build, Validate & Deploy Quickstart
 
-<!-- BEGIN DAC:local-build-deploy source="gitpavleenbali/dac-workload-modernization@v1.0.0-vm-baseline" irHash="e8147f08f46c" -->
+<!-- BEGIN DAC:local-build-deploy source="gitpavleenbali/dac-workload-modernization@a77df6d1846443937999c73a3fe23eb50c8be9d6" irHash="9d0955415321" -->
 ```bash
 # 1. Run application & DaC translator test suites
 npm test
 
-# 2. Validate Virtual Machine Landing Zone Terraform
-terraform -chdir=infra/terraform init -backend=false && terraform -chdir=infra/terraform validate
+# 2. Build & push container image to Azure Container Registry (acrgridtelemetryprod)
+docker build -t acrgridtelemetryprod.azurecr.io/grid-telemetry-service:latest .
+az acr login --name acrgridtelemetryprod
+docker push acrgridtelemetryprod.azurecr.io/grid-telemetry-service:latest
 
-# 3. Package & deploy systemd service to Linux VM (vm-grid-telemetry-01)
-tar -czf dist-grid-telemetry.tar.gz src/ package.json deploy/systemd/grid-telemetry.service
-az network bastion ssh --name bas-grid-ops --resource-group rg-grid-telemetry-prod --target-resource-id <vm-id> --auth-type AAD
+# 3. Validate Terraform & apply Kubernetes manifests to AKS (aks-grid-telemetry-prod)
+terraform -chdir=infra/terraform init -backend=false && terraform -chdir=infra/terraform validate
+az aks get-credentials --resource-group rg-grid-telemetry-prod --name aks-grid-telemetry-prod
+kubectl apply -f deploy/k8s/
 ```
 <!-- END DAC:local-build-deploy -->
 
 ## REST API Surface
 
-<!-- BEGIN DAC:local-api-endpoints source="gitpavleenbali/dac-workload-modernization@v1.0.0-vm-baseline" irHash="e8147f08f46c" -->
+<!-- BEGIN DAC:local-api-endpoints source="gitpavleenbali/dac-workload-modernization@a77df6d1846443937999c73a3fe23eb50c8be9d6" irHash="9d0955415321" -->
 | HTTP Method | Endpoint Path | Capability Summary |
 | :--- | :--- | :--- |
-| `GET` | `/healthz` | Liveness and readiness probe returning active runtime mode and buffer depth |
+| `GET` | `/healthz` | Kubernetes liveness and readiness probe returning pod runtime mode and buffer depth |
 | `GET` | `/v1/grid/status` | Retrieve current regional grid nominal frequency, active frequency-deviation alerts, and latest substation reading |
-| `POST` | `/v1/telemetry` | Idempotently ingest substation voltage and frequency telemetry reading |
+| `POST` | `/v1/telemetry` | Idempotently ingest single substation voltage and frequency telemetry reading |
+| `POST` | `/v1/telemetry/batch` | Asynchronously enqueue high-frequency substation telemetry batch via Azure Service Bus Premium |
+| `POST` | `/v1/dispatch/curtailment` | Issue automated substation load-curtailment dispatch command during grid frequency excursion |
 | `GET` | `/v1/telemetry/recent` | List most recent 25 telemetry readings in the active window |
 <!-- END DAC:local-api-endpoints -->
 
