@@ -6,6 +6,8 @@ Ingests high-frequency substation voltage, frequency, and thermal telemetry and 
 
 This repository is the workload source. `main` holds the virtual machine (VM) baseline; [workload PR #1](https://github.com/gitpavleenbali/dac-workload-modernization/pull/1/files) proposes that the same app run on Azure Kubernetes Service (AKS). The declarations and diagrams describe a scenario in Git, not a deployed service.
 
+The deployment quickstart illustrates the declared hosting design. The workshop does not provision Azure resources or publish a container image.
+
 ## Current Hosting & Landing Zone Summary
 
 <!-- BEGIN DAC:local-hosting-summary source="gitpavleenbali/dac-workload-modernization@v1.0.0-vm-baseline" irHash="e8147f08f46c" -->
@@ -69,8 +71,6 @@ flowchart TB
 <!-- END DAC:local-topology-diagram -->
 
 ## Build, Validate & Deploy Quickstart
-
-The deployment commands below illustrate the declared hosting design. The Doc as Code workshop only renders and verifies documents; it does not provision Azure resources or publish a container image.
 
 <!-- BEGIN DAC:local-build-deploy source="gitpavleenbali/dac-workload-modernization@v1.0.0-vm-baseline" irHash="e8147f08f46c" -->
 ```bash
