@@ -32,7 +32,6 @@
     .masthead .wrap { padding-block: clamp(1.4rem, 3.8vw, 3.2rem) 1.3rem; }
     .masthead-intro { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: center; gap: .85rem clamp(1.5rem, 5vw, 5rem); }
     .lead { font-size: clamp(1rem, 1.6vw, 1.17rem); color: #d6e7fc; margin: .65rem 0 0; }
-    .hero-scope { color: #d6e7fc; margin: .55rem 0 0; }
     .masthead-intro strong { color: var(--white); }
     .hero-mark { display: block; width: min(100%, 30rem); height: auto; justify-self: end; }
     .masthead .chapters { margin-top: 1.25rem; padding-top: .85rem; border-top: 1px solid #426789; }
@@ -41,7 +40,17 @@
     .chapters button { padding: .25rem .6rem; background: transparent; border: 1px solid #6a87a9; border-radius: .25rem; }
     .chapters button:hover { background: #203f65; }
     .chapters :focus-visible { outline-color: #ffcc83; }
-    .chapters .mode-switch { display: inline-flex; align-items: center; gap: .55rem; padding: .28rem .65rem; margin-inline-start: auto; }
+    .workshop-modes { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; margin-inline-start: auto; }
+    .workshop-modes > button { min-height: 2.75rem; padding-inline: .65rem; }
+    .chapters .mode-switch { display: inline-flex; align-items: center; gap: .55rem; }
+    html[data-workshop-fullscreen] #workshop-fullscreen {
+      position: fixed; z-index: 3; inset-inline-end: max(1rem, env(safe-area-inset-right));
+      inset-block-end: max(1rem, env(safe-area-inset-bottom)); background: var(--navy); border-color: #85c6ff;
+    }
+    html[data-workshop-fullscreen] #workshop-fullscreen:hover { background: #203f65; }
+    .fullscreen-notice { margin: .8rem 0 0; color: #d6e7fc; }
+    .fullscreen-notice a { color: var(--white); }
+    .fullscreen-notice:focus-visible { outline-color: #ffcc83; }
     .mode-switch[aria-checked="true"] { border-color: #a6dfd5; background: #204c53; }
     .mode-value { min-width: 2.2rem; border-radius: .2rem; padding: 0 .25rem; background: #dceaf9; color: var(--navy); font-size: .78rem; text-align: center; }
     .mode-switch[aria-checked="true"] .mode-value { background: #b7ebe4; }
@@ -120,7 +129,7 @@
     .live-link-btn { display: inline-flex; align-items: center; padding: .35rem .75rem; border-radius: .3rem; background: var(--blue); color: var(--white); font-weight: 650; font-size: .88rem; text-decoration: none; }
     .live-link-btn:hover { background: #054991; text-decoration: underline; }
     @media screen and (max-width: 42rem) {
-      .chapters .mode-switch { margin-inline-start: 0; }
+      .workshop-modes { margin-inline-start: 0; }
       .masthead-intro { grid-template-columns: minmax(0, 1fr); }
       .hero-mark { justify-self: start; width: min(100%, 24rem); }
       .deck-columns, .run-sheet li { grid-template-columns: minmax(0, 1fr); }
@@ -128,6 +137,21 @@
     }
     main > section { padding-block: clamp(1.45rem, 3vw, 2.5rem); }
     main > section + section { border-top: 1px solid var(--line); }
+    .workshop-intro { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); align-items: start; gap: 1.35rem clamp(1.5rem, 5vw, 5rem); }
+    .workshop-speaker { margin: .65rem 0 .12rem; font: 700 clamp(1.12rem, 2vw, 1.42rem)/1.25 var(--display); }
+    .workshop-role { margin: 0; color: var(--muted); }
+    .workshop-company { margin: .55rem 0 0; font-weight: 650; }
+    .workshop-date { margin-top: .2rem; font-size: clamp(1.12rem, 2vw, 1.42rem); }
+    .workshop-schedule { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem 1.1rem; margin: .8rem 0 0; }
+    .workshop-schedule > div { border-top: 1px solid var(--line); padding-top: .45rem; }
+    .workshop-schedule dt { font-weight: 700; }
+    .workshop-schedule dd { margin: .15rem 0 0; color: var(--muted); font-variant-numeric: tabular-nums; }
+    @media screen and (max-width: 48rem) {
+      .workshop-intro { grid-template-columns: minmax(0, 1fr); }
+      .workshop-schedule { grid-template-columns: minmax(0, 1fr); gap: .4rem; }
+      .workshop-schedule > div { display: grid; grid-template-columns: 1.1fr 1fr; gap: .5rem; }
+      .workshop-schedule dd { margin: 0; }
+    }
     .section-intro { color: var(--muted); }
     .team-flow { margin: 1rem 0 0; }
     .team-flow img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: .4rem; }
@@ -137,6 +161,23 @@
     .team-flow-steps strong, .team-flow-steps span { display: block; }
     .team-flow-steps span, .team-flow-caption { color: var(--muted); }
     .team-flow-caption { font-size: .9rem; }
+    @media screen and (min-width: 64rem) and (max-height: 64rem) {
+      .masthead .wrap { padding-block: .8rem .7rem; }
+      .masthead-intro { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); column-gap: 2rem; }
+      .masthead .lead { line-height: 1.45; }
+      .masthead .chapters { margin-top: .7rem; padding-top: .45rem; }
+      :is(#workshop-intro, #cross-team-flow) { padding-block: .85rem; }
+      #workshop-intro-title { font-size: clamp(1.65rem, 2.4vw, 2rem); }
+      .workshop-nameplate { line-height: 1.45; }
+      .workshop-speaker { margin-top: .35rem; }
+      .workshop-company { margin-top: .25rem; }
+      .team-flow { display: grid; grid-template-columns: minmax(0, 1fr) min(48%, 34rem); align-items: start; gap: 1.1rem; margin-top: .6rem; }
+      .team-flow figcaption { line-height: 1.45; }
+      .team-flow-steps { grid-template-columns: minmax(0, 1fr); gap: .35rem; margin: 0; }
+      .team-flow-steps li { padding-top: .32rem; }
+      .team-flow-steps :is(strong, span) { display: inline; }
+      .team-flow-caption { margin: .45rem 0 0; }
+    }
     .term-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem 1.2rem; margin-block: .75rem; }
     .term-grid div { padding-block: .5rem; border-block-start: 1px solid var(--line); }
     .term-grid dt { font-weight: 700; }
@@ -486,13 +527,12 @@
       * { print-color-adjust: exact; }
       body { background: white; font-size: 10.5pt; line-height: 1.42; }
       .wrap { width: 100%; }
-      .masthead .wrap { padding: .85rem 1.35rem .6rem; }
+      .masthead .wrap { padding: .65rem 1.35rem .48rem; }
       .masthead-intro { grid-template-columns: minmax(0, 1fr) 13rem; gap: 0 1.1rem; }
       h1 { font-size: 29pt; }
       h2 { font-size: 19pt; }
       h3 { font-size: 13pt; }
       .lead { max-width: none; font-size: 12pt; margin-block: .35rem .25rem; }
-      .hero-scope { max-width: none; margin: .25rem 0 0; }
       .chapters, .chapter-nav, .chapter-link, .toolbar, #map-inspector, .map-key, .glossary-tools, .pipeline-note,
       .tile-symbol, .tile-symbol-field, .snapshot-switch, .snapshot-state, .copy-block, .facilitator,
       .deck-rail, .deck-nav-inline, .deck-footer, .deck-qa, #file-comparison, [data-screen-only],
@@ -507,13 +547,19 @@
       .deck-slide.is-print-canonical[hidden] { display: block !important; }
       .comic { margin-block: .35rem; }
       .comic ol { gap: .35rem; padding: .35rem; }
-      #cross-team-flow { padding-block: .65rem .6rem; }
-      #cross-team-flow .section-intro { margin-block: .2rem .35rem; }
-      .team-flow { display: grid; grid-template-columns: min(42%, 34rem) minmax(0, 1fr); align-items: start; gap: .6rem 1rem; margin: 0; }
+      #workshop-intro { padding-block: .4rem .3rem; gap: 1.1rem; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); }
+      #workshop-intro :is(h2, h3) { margin: 0; font-size: 12pt; }
+      .workshop-nameplate { display: flex; flex-wrap: wrap; gap: 0 .55rem; align-items: baseline; margin-top: .15rem; }
+      .workshop-nameplate p { margin: 0; font-size: 10.5pt; }
+      .workshop-schedule { gap: .55rem; margin: .2rem 0 0; }
+      .workshop-schedule > div { display: flex; flex-wrap: wrap; gap: 0 .45rem; padding-top: .12rem; }
+      .workshop-schedule dd { margin: 0; }
+      #cross-team-flow { padding-block: .45rem .4rem; }
+      .team-flow { display: grid; grid-template-columns: min(38%, 28rem) minmax(0, 1fr); align-items: start; gap: .6rem 1rem; margin: 0; }
       .team-flow-steps { display: grid; grid-template-columns: 1fr; gap: .25rem; margin: 0 0 .2rem; font-size: 9.5pt; }
       .team-flow-steps li { padding-top: .16rem; border-width: 1px; }
       .team-flow-steps :is(strong, span) { display: inline; }
-      .team-flow-caption { font-size: 9pt; }
+      .team-flow-caption { max-width: none; margin: .3rem 0 0; font-size: 9pt; }
       .comic-panel { grid-template-columns: 6rem minmax(0, 1fr); grid-template-rows: auto; align-items: center; }
       .comic-panel img, #how-deck .comic-panel img { max-height: 5.75rem; height: auto; }
       .comic-caption { padding: .35rem .55rem; border-top: 0; border-inline-start: 1px solid #d5c8b4; }
@@ -521,10 +567,14 @@
       .comic-caption .comic-meaning, .comic figcaption { font-size: 9.5pt; }
       .comic figcaption { margin-block: .25rem 0; }
       #why .why-grid { display: none; }
-      #why { padding-bottom: .35rem; }
+      #why { padding-block: .45rem .28rem; }
+      #why > .section-intro { margin-bottom: .45rem; }
       #why-deck .deck-lead { max-width: none; }
       #what { padding-block: .25rem 0; border: 0; break-inside: avoid; }
       #what .section-intro { margin-bottom: .4rem; }
+      :is(#why-deck, #what-deck) { margin-block: .3rem; }
+      :is(#why-deck, #what-deck) .deck-stage { padding-block: .35rem; }
+      :is(#why-deck, #what-deck) .comic { margin-block: .25rem; }
       :is(#why-deck, #what-deck, #how-deck) .deck-bar { display: none; }
       #how { padding-bottom: .25rem; }
       #how > .section-intro { max-width: none; margin-block: .25rem .35rem; }
@@ -585,23 +635,49 @@
         <div>
           <h1>Doc as Code</h1>
           <p class="lead"><strong>Workshop scenario:</strong> The Grid Telemetry application is hosted on Azure virtual machines (VMs) in the starting design. As part of modernization, the team proposes running the <strong>same application</strong> in containers on Azure Kubernetes Service (AKS).</p>
-          <p class="hero-scope"><strong>What we’ll show:</strong> The code change updates the existing diagrams and guides in the application’s repository. A separate pull request proposes matching updates to the central platform docs. Nothing is deployed to Azure.</p>
         </div>
         <img class="hero-mark" src="./assets/doc-as-code-mark.svg" alt="A stack of pages breaks into square tiles and then 0s and 1s, a visual metaphor for treating docs like code." width="480" height="190" fetchpriority="high">
       </div>
       <nav class="chapters" aria-label="Document sections">
+        <a href="#workshop-intro">Intro</a>
         <a href="#why">Why</a>
         <a href="#what">What</a>
         <a href="#how">How</a>
         <a href="#evidence-tour">Evidence &amp; Links</a>
         <a href="#glossary">Glossary</a>
         <button type="button" id="print-document">Print / Save PDF</button>
-        <button type="button" id="facilitator-mode" class="mode-switch" role="switch" aria-checked="false" hidden>Facilitator mode <span class="mode-value" aria-hidden="true">Off</span></button>
+        <div class="workshop-modes" role="group" aria-label="Workshop display">
+          <button type="button" id="facilitator-mode" class="mode-switch" role="switch" aria-checked="false" hidden>Facilitator mode <span class="mode-value" aria-hidden="true">Off</span></button>
+          <button type="button" id="workshop-fullscreen" hidden>Full screen</button>
+        </div>
       </nav>
+      <p class="fullscreen-notice" id="fullscreen-notice" tabindex="-1" data-screen-only hidden>
+        <span id="fullscreen-message"></span>
+        <a id="fullscreen-browser-link" href="./dac.html" target="_blank" rel="noopener">Open this workshop in a new tab</a>
+      </p>
     </div>
   </header>
 
   <main class="wrap">
+    <section class="workshop-intro" id="workshop-intro" aria-labelledby="workshop-intro-title">
+      <div>
+        <h2 id="workshop-intro-title">Workshop introduction</h2>
+        <div class="workshop-nameplate">
+          <p class="workshop-speaker">Pavleen Bali</p>
+          <p class="workshop-role">Cloud Solution Architect, Cloud &amp; AI Platform</p>
+          <p class="workshop-company">Microsoft</p>
+        </div>
+      </div>
+      <div>
+        <h3 class="workshop-date"><time datetime="2026-11-23">Monday, 23 November 2026</time></h3>
+        <dl class="workshop-schedule" aria-label="Workshop schedule">
+          <div><dt>Morning session</dt><dd><time datetime="10:00">10:00</time>–<time datetime="12:00">12:00</time></dd></div>
+          <div><dt>Lunch</dt><dd><time datetime="12:00">12:00</time>–<time datetime="13:00">13:00</time></dd></div>
+          <div><dt>Afternoon session</dt><dd><time datetime="13:00">13:00</time>–<time datetime="15:00">15:00</time></dd></div>
+        </dl>
+      </div>
+    </section>
+
     <section class="facilitator" id="run-of-show" aria-labelledby="run-title" hidden>
       <h2 id="run-title">Facilitator mode · 120-minute workshop plan</h2>
       <p><strong>Opening words:</strong> “Picture an application your team already runs on virtual machines. To modernize how it’s hosted, you propose running that same application in containers on Azure Kubernetes Service. We’re not deploying the app today. We’ll follow the code change and see how it updates the diagrams and guides people already use.”</p>
@@ -618,7 +694,6 @@
 
     <section id="cross-team-flow" aria-labelledby="team-flow-title">
       <h2 id="team-flow-title">One process for workload and platform documentation</h2>
-      <p class="section-intro">Infrastructure, deployment, and API changes can come from different teams and repositories. The same Doc as Code (DaC) engine can run against each workload, keeping its docs and the platform team’s shared guides aligned.</p>
       <figure class="team-flow">
         <img src="./assets/cross-team-projection.webp" alt="Engineers feed source pages into a scanner. The pages break into square tiles and binary digits, then appear on a projection screen as blue workload documentation and teal platform guides." width="1600" height="440" decoding="async">
         <figcaption>
@@ -7875,6 +7950,10 @@ File Added:       products/grid-telemetry-service/decisions/adr-003-vm-to-aks.md
   </dialog>
   <script>
     const facilitatorToggle = document.querySelector('#facilitator-mode');
+    const fullscreenToggle = document.querySelector('#workshop-fullscreen');
+    const fullscreenNotice = document.querySelector('#fullscreen-notice');
+    const fullscreenMessage = document.querySelector('#fullscreen-message');
+    const fullscreenBrowserLink = document.querySelector('#fullscreen-browser-link');
     const presentation = document.querySelector('#presentation');
     const presentationBody = presentation.querySelector('.presentation-body');
     const presentClose = presentation.querySelector('[data-present-close]');
@@ -7885,6 +7964,46 @@ File Added:       products/grid-telemetry-service/decisions/adr-003-vm-to-aks.md
     const sequences = new WeakMap();
     let presenting = null;
     let openingPresentation = false;
+    let changingPageFullscreen = false;
+
+    function syncFullscreenControl() {
+      const active = document.fullscreenElement === document.documentElement;
+      fullscreenToggle.textContent = active ? 'Exit full screen' : 'Full screen';
+      document.documentElement.toggleAttribute('data-workshop-fullscreen', active);
+    }
+
+    function showFullscreenNotice(message, showBrowserLink) {
+      fullscreenMessage.textContent = message;
+      fullscreenBrowserLink.hidden = !showBrowserLink;
+      fullscreenBrowserLink.href = location.href;
+      fullscreenNotice.hidden = false;
+      fullscreenNotice.focus();
+    }
+
+    fullscreenToggle.hidden = false;
+    syncFullscreenControl();
+    fullscreenToggle.addEventListener('click', async () => {
+      if (changingPageFullscreen || openingPresentation || presenting) return;
+      const exiting = document.fullscreenElement === document.documentElement;
+      try {
+        changingPageFullscreen = true;
+        fullscreenNotice.hidden = true;
+        if (exiting) {
+          await document.exitFullscreen();
+        } else if (document.fullscreenEnabled && document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+        } else {
+          showFullscreenNotice('Full screen is unavailable in this view. In Edge or Chrome, F11 also enters full screen.', true);
+        }
+      } catch {
+        showFullscreenNotice(exiting
+          ? 'The page could not exit full screen. Press Esc to return to the browser window.'
+          : 'This view denied the full-screen request. In a regular Edge or Chrome window, F11 also enters full screen.', !exiting);
+      } finally {
+        changingPageFullscreen = false;
+        syncFullscreenControl();
+      }
+    });
 
     function setFacilitator(enabled) {
       document.body.toggleAttribute('data-facilitating', enabled);
@@ -7924,7 +8043,7 @@ File Added:       products/grid-telemetry-service/decisions/adr-003-vm-to-aks.md
     }
 
     async function startPresentation(target, label, trigger) {
-      if (presenting || openingPresentation) return;
+      if (presenting || openingPresentation || changingPageFullscreen) return;
       openingPresentation = true;
       closeFlow();
       const x = window.scrollX;
@@ -7977,6 +8096,8 @@ File Added:       products/grid-telemetry-service/decisions/adr-003-vm-to-aks.md
     presentClose.addEventListener('click', () => presentation.close());
     presentation.addEventListener('close', restorePresentation);
     document.addEventListener('fullscreenchange', () => {
+      fullscreenNotice.hidden = true;
+      syncFullscreenControl();
       if (presenting?.ownsFullscreen && !document.fullscreenElement && !viewer.open && !storyDialog.open && presentation.open) presentation.close();
     });
     presentation.addEventListener('click', event => {
