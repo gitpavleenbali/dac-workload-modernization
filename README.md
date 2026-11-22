@@ -119,6 +119,22 @@ git diff -- README.md docs/architecture.md
 
 **Option 1 is the foundation.** The Node.js 20+ translator reads a checkout from GitHub, Azure DevOps, or Bitbucket. Extracting, rendering, and verifying need neither an AI model nor a Git-host API. This repository verifies GitHub Actions. Azure Pipelines and Bitbucket Pipelines can call the same commands after checkout; their workflow configuration and any host-native pull request publisher are separate integrations. The publisher included here targets GitHub.
 
+### Run the Option 1 workshop demo
+
+From this repository root, paste one command at a time:
+
+```powershell
+npm run demo:option1:prepare
+npm run demo:option1:render
+npm run demo:option1:clean
+```
+
+1. **Prepare** creates a disposable `dac-option1-demo` checkout with AKS code and old VM docs. The stale-document failure is expected and explained in the terminal.
+2. **Render** updates the same `README.md` and `docs/architecture.md`, verifies both Mermaid blocks, runs the tests, and prints exactly what to show in VS Code. It never pushes.
+3. **Clean** removes only that registered disposable worktree. It refuses to delete it if any unexpected file changed.
+
+For central publication, run the [workload workflow](https://github.com/gitpavleenbali/dac-workload-modernization/actions/workflows/dac-translator-sync.yml) on `feat/modernize-vm-to-aks`, select **Update the central docs PR**, and leave **Option 2** unchecked.
+
 | Path | What it produces | Workshop evidence |
 | --- | --- | --- |
 | **1 · Deterministic translator** | The same rules refresh the existing diagrams and Markdown. An authorized opt-in sync separately updates the rolling central pull request. | [Workload PR #1](https://github.com/gitpavleenbali/dac-workload-modernization/pull/1/files) → [central docs PR #1](https://github.com/gitpavleenbali/dac-central-platform-docs/pull/1/files). [Workload sync](https://github.com/gitpavleenbali/dac-workload-modernization/actions/runs/44972624473) and [central check](https://github.com/gitpavleenbali/dac-central-platform-docs/actions/runs/44972674206). |
