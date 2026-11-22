@@ -506,8 +506,7 @@
       .comic ol { gap: .35rem; padding: .35rem; }
       #cross-team-flow { padding-block: .65rem .6rem; }
       #cross-team-flow .section-intro { margin-block: .2rem .35rem; }
-      .team-flow { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); align-items: start; gap: .6rem 1rem; margin: 0; }
-      .team-flow img { height: 9.5rem; object-fit: cover; object-position: center 54%; }
+      .team-flow { display: grid; grid-template-columns: min(42%, 34rem) minmax(0, 1fr); align-items: start; gap: .6rem 1rem; margin: 0; }
       .team-flow-steps { display: grid; grid-template-columns: 1fr; gap: .25rem; margin: 0 0 .2rem; font-size: 9.5pt; }
       .team-flow-steps li { padding-top: .16rem; border-width: 1px; }
       .team-flow-steps :is(strong, span) { display: inline; }
@@ -617,14 +616,14 @@
       <h2 id="team-flow-title">One process for workload and platform documentation</h2>
       <p class="section-intro">Infrastructure, deployment, and API changes can come from different teams and repositories. The same Doc as Code (DaC) engine can run against each workload, keeping its docs and the platform team’s shared guides aligned.</p>
       <figure class="team-flow">
-        <img src="./assets/cross-team-docs.webp" alt="Illustration of engineering teams feeding source sheets into one document processor, with blue workload handbooks and teal platform guides coming out separately." width="1600" height="540" decoding="async">
+        <img src="./assets/cross-team-projection.webp" alt="Engineers feed source pages into a scanner. The pages break into square tiles and binary digits, then appear on a projection screen as blue workload documentation and teal platform guides." width="1600" height="440" decoding="async">
         <figcaption>
           <ol class="team-flow-steps" role="list">
             <li><strong>Teams change the source.</strong> <span>Infrastructure, deployment settings, and API contracts live in version-controlled files.</span></li>
             <li><strong>The engine reads the change.</strong> <span>The translator extracts supported facts into one record and renders updated sections.</span></li>
-            <li><strong>Two sets of existing docs get an update.</strong> <span>Developers update Markdown and diagrams alongside the code. An opt-in sync proposes updates to shared guides, diagrams, and the service catalog in a separate central pull request.</span></li>
+            <li><strong>The review happens in two places.</strong> <span>Blue shows the updated workload Markdown and diagrams. Teal shows the proposed updates to the platform team’s shared guides, diagrams, and service catalog in a separate, opt-in pull request.</span></li>
           </ol>
-          <p class="team-flow-caption">The workshop demonstrates this pattern on one service. The guides remain readable text, their links stay the same, and the owners’ notes outside the generated sections are preserved.</p>
+          <p class="team-flow-caption">The projected bits are a visual metaphor. The guides stay as readable Markdown at the same links, and the translator preserves the owners’ notes outside the generated sections.</p>
         </figcaption>
       </figure>
     </section>

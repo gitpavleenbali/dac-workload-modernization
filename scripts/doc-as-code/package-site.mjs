@@ -26,7 +26,7 @@ const relativeAssets = [...html.matchAll(/(?:src|href)="\.\/(assets\/[^"]+)"/g)]
 const workshopDiagrams = [...new Set(relativeAssets.filter(file => /^assets\/workshop-diagram-[a-f0-9]{12}\.svg$/.test(file)))];
 if (workshopDiagrams.length < 4) throw new Error('The workshop Mermaid diagrams were not embedded.');
 const storyAssets = ['why', 'what', 'how', 'core', 'local', 'review'].map(chapter => `assets/story-${chapter}.png`);
-const openingAssets = ['assets/doc-as-code-mark.svg', 'assets/cross-team-docs.webp',
+const openingAssets = ['assets/doc-as-code-mark.svg', 'assets/cross-team-projection.webp',
   ...['change', 'refresh', 'review'].map(scene => `assets/story-how-${scene}.webp`)];
 const assets = [...topologyAssets, ...workshopDiagrams, ...storyAssets, ...openingAssets];
 if (assets.some(file => !relativeAssets.includes(file)) || relativeAssets.some(file => !assets.includes(file))) {
