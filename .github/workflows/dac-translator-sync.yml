@@ -230,14 +230,13 @@ jobs:
     permissions:
       actions: read
       contents: read
+      id-token: write
       pull-requests: read
-    uses: gitpavleenbali/dac-central-platform-docs/.github/workflows/dac-agentic-review.lock.yml@6499971cad525b494559443d8e9a78473ad63899
+    uses: gitpavleenbali/dac-central-platform-docs/.github/workflows/dac-agentic-review.lock.yml@40120177ee2a99fe56ef7b331997c43abf479a44
     with:
       scope: workload
       head_sha: ${{ needs.validate-and-translate.outputs.head_sha }}
       source_sha: ${{ needs.validate-and-translate.outputs.head_sha }}
-    secrets:
-      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
 
   publish-central:
     name: Open or update the synchronized central docs PR
