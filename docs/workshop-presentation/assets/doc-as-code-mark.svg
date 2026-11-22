@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 190" width="480" height="190" role="img" aria-labelledby="title desc">
+  <title id="title">Documents become code</title>
+  <desc id="desc">A stack of pages breaks into square tiles and then into binary digits.</desc>
+  <defs>
+    <pattern id="grid" width="16" height="16" patternUnits="userSpaceOnUse">
+      <path d="M16 0H0V16" fill="none" stroke="#46719c" stroke-opacity=".25"/>
+    </pattern>
+  </defs>
+  <rect x="1" y="1" width="478" height="188" rx="13" fill="#0d2038" stroke="#426789"/>
+  <rect x="14" y="16" width="452" height="158" fill="url(#grid)"/>
+  <g fill="none" stroke="#649cd2" stroke-opacity=".6">
+    <path d="M30 49V32h17m386 0h17v17M30 141v17h17m386 0h17v-17"/>
+    <path d="M139 124h39v-22h42m-81-37h43v18h20m21 54h43v-16h53m-75-60h40v18h33" stroke-dasharray="3 5"/>
+  </g>
+  <path d="M44 54h79l21 21v72H44z" fill="#204c72" stroke="#6fa9df" stroke-width="1.5"/>
+  <path d="M53 45h79l21 21v72H53z" fill="#3a76a9" stroke="#8abfe9" stroke-width="1.5"/>
+  <path d="M62 36h79l21 21v72H62z" fill="#eaf5ff" stroke="#8fc9f6" stroke-width="1.5"/>
+  <path d="M141 36v21h21" fill="#b4d7f2" stroke="#5f91bf" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M77 60h48M77 71h38m-38 37h50m-50 10h60" stroke="#326797" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M90 83H109v13h24" fill="none" stroke="#19736a" stroke-width="2"/>
+  <g fill="#cceee6" stroke="#22786e" stroke-width="1.5">
+    <rect x="78" y="79" width="15" height="9" rx="1.5"/>
+    <rect x="129" y="91" width="16" height="10" rx="1.5"/>
+  </g>
+  <g>
+    <rect x="173" y="49" width="19" height="19" rx="2" fill="#80c6ff"/>
+    <rect x="185" y="91" width="16" height="16" rx="2" fill="#46a2e2"/>
+    <rect x="166" y="123" width="12" height="12" rx="1.5" fill="#b1dafc"/>
+    <rect x="208" y="65" width="12" height="12" rx="1.5" fill="#a4dcff"/>
+    <rect x="222" y="96" width="20" height="20" rx="2" fill="#7bd5c4"/>
+    <rect x="212" y="132" width="10" height="10" rx="1" fill="#ffca7c"/>
+    <rect x="241" y="54" width="11" height="11" rx="1.5" fill="#367eb5"/>
+    <rect x="258" y="76" width="14" height="14" rx="1.5" fill="#a8e9dd"/>
+    <rect x="267" y="122" width="9" height="9" rx="1" fill="#8ac3ea"/>
+    <rect x="289" y="96" width="11" height="11" rx="1" fill="#4cad9e"/>
+    <rect x="303" y="58" width="7" height="7" rx="1" fill="#ffc572"/>
+    <rect x="306" y="131" width="6" height="6" rx="1" fill="#a8e9dd"/>
+  </g>
+  <g font-family="Consolas, 'Courier New', monospace" font-size="22" font-weight="700" letter-spacing="6">
+    <text x="324" y="62" fill="#8cc9f7">01010</text>
+    <text x="324" y="90" fill="#a7eadc">10101</text>
+    <text x="324" y="118" fill="#eaf5ff">01001</text>
+    <text x="324" y="146" fill="#8cc9f7">10010</text>
+  </g>
+</svg>

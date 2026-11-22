@@ -17,8 +17,8 @@ if (!lstatSync(path.join(source, 'dac.html')).isFile()) {
   throw new Error('The workshop page must be a regular file.');
 }
 const html = readFileSync(path.join(source, 'dac.html'), 'utf8');
-for (const id of ['why', 'why-deck', 'opening-story', 'story-detail', 'facilitator-mode', 'what', 'what-deck', 'portable-core-story', 'pipeline-flow', 'pipeline-detail', 'map-pipeline',
-  'presentation', 'diagram-viewer', 'how', 'how-deck', 'topology-comparison', 'file-comparison', 'compare-code', 'compare-readme',
+for (const id of ['cross-team-flow', 'why', 'why-deck', 'opening-story', 'story-detail', 'facilitator-mode', 'what', 'what-deck', 'portable-core-story', 'fingerprints', 'pipeline-flow', 'pipeline-detail', 'map-pipeline',
+  'presentation', 'diagram-viewer', 'how', 'how-deck', 'how-story', 'topology-comparison', 'file-comparison', 'compare-code', 'compare-readme', 'workflow-terms',
   'compare-provenance', 'option-two-local', 'fixture-workload', 'fixture-central', 'evidence-tour', 'evidence-index', 'evidence-deck', 'glossary']) {
   if (!html.includes(`id="${id}"`)) throw new Error(`Missing site section: ${id}`);
 }
@@ -26,7 +26,9 @@ const relativeAssets = [...html.matchAll(/(?:src|href)="\.\/(assets\/[^"]+)"/g)]
 const workshopDiagrams = [...new Set(relativeAssets.filter(file => /^assets\/workshop-diagram-[a-f0-9]{12}\.svg$/.test(file)))];
 if (workshopDiagrams.length < 4) throw new Error('The workshop Mermaid diagrams were not embedded.');
 const storyAssets = ['why', 'what', 'how', 'core', 'local', 'review'].map(chapter => `assets/story-${chapter}.png`);
-const assets = [...topologyAssets, ...workshopDiagrams, ...storyAssets];
+const openingAssets = ['assets/doc-as-code-mark.svg', 'assets/cross-team-docs.webp',
+  ...['change', 'refresh', 'review'].map(scene => `assets/story-how-${scene}.webp`)];
+const assets = [...topologyAssets, ...workshopDiagrams, ...storyAssets, ...openingAssets];
 if (assets.some(file => !relativeAssets.includes(file)) || relativeAssets.some(file => !assets.includes(file))) {
   throw new Error('The HTML references do not match the Pages asset allowlist.');
 }
