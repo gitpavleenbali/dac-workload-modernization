@@ -30,7 +30,10 @@
     .wrap { width: min(100% - clamp(1rem, 4vw, 3rem), 90rem); margin-inline: auto; }
     .masthead { color: var(--white); background: var(--navy); border-bottom: 3px solid #85c6ff; }
     .masthead .wrap { padding-block: clamp(1.4rem, 3.8vw, 3.2rem) 1.3rem; }
-    .lead { font-size: clamp(1rem, 1.6vw, 1.17rem); color: #d6e7fc; margin: .65rem 0 1.1rem; }
+    .masthead-intro { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: center; gap: .85rem clamp(1.5rem, 5vw, 5rem); }
+    .lead { font-size: clamp(1rem, 1.6vw, 1.17rem); color: #d6e7fc; margin: .65rem 0 0; }
+    .hero-mark { display: block; width: min(100%, 30rem); height: auto; justify-self: end; }
+    .masthead .chapters { margin-top: 1.25rem; padding-top: .85rem; border-top: 1px solid #426789; }
     .chapters { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem 1.35rem; }
     .chapters :is(a, button) { color: #ebf5ff; font-weight: 600; }
     .chapters button { padding: .25rem .6rem; background: transparent; border: 1px solid #6a87a9; border-radius: .25rem; }
@@ -96,6 +99,8 @@
     .comic-panel:focus-visible { outline-color: #ffcb80; outline-offset: -3px; }
     .comic-panel:disabled { opacity: 1; }
     .comic-panel img { display: block; width: 100%; height: auto; max-height: clamp(9rem, 27dvh, 19rem); object-fit: contain; }
+    .comic-sequence ol { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .comic-sequence img { height: clamp(12rem, 31dvh, 18rem); max-height: none; background: #dce8f0; }
     .comic-caption { position: relative; display: block; padding: .75rem 2.7rem .8rem .85rem; border-top: 1px solid #d5c8b4; }
     .comic-caption strong { display: block; font-family: var(--display); font-size: clamp(1rem, 1.55vw, 1.26rem); }
     .comic-caption .comic-line { display: block; margin-block: .2rem; font-weight: 650; line-height: 1.35; }
@@ -114,12 +119,29 @@
     .live-link-btn:hover { background: #054991; text-decoration: underline; }
     @media screen and (max-width: 42rem) {
       .chapters .mode-switch { margin-inline-start: 0; }
+      .masthead-intro { grid-template-columns: minmax(0, 1fr); }
+      .hero-mark { justify-self: start; width: min(100%, 24rem); }
       .deck-columns, .run-sheet li { grid-template-columns: minmax(0, 1fr); }
       .deck-current-label { display: none; }
     }
     main > section { padding-block: clamp(1.45rem, 3vw, 2.5rem); }
     main > section + section { border-top: 1px solid var(--line); }
     .section-intro { color: var(--muted); }
+    .team-flow { margin: 1rem 0 0; }
+    .team-flow img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: .4rem; }
+    .team-flow-steps { display: grid; grid-template-columns: 1.25fr 1fr 1.25fr; gap: 1.2rem; margin: .8rem 0 .6rem; padding: 0; list-style: none; }
+    .team-flow-steps li { padding-top: .55rem; border-top: 2px solid #6895c4; min-width: 0; }
+    .team-flow-steps li:last-child { border-color: #398f81; }
+    .team-flow-steps strong, .team-flow-steps span { display: block; }
+    .team-flow-steps span, .team-flow-caption { color: var(--muted); }
+    .team-flow-caption { font-size: .9rem; }
+    .term-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem 1.2rem; margin-block: .75rem; }
+    .term-grid div { padding-block: .5rem; border-block-start: 1px solid var(--line); }
+    .term-grid dt { font-weight: 700; }
+    .term-grid dd { margin: .15rem 0 0; color: var(--muted); }
+    .tech-plain { display: block; margin-top: .2rem; color: var(--muted); font-weight: 400; }
+    .receipt-cases { padding-top: .65rem; }
+    #fingerprints:target { scroll-margin-top: 1rem; }
     .chapter-nav { display: flex; flex-wrap: wrap; gap: .55rem 1.5rem; }
     .chapter-nav a { font-weight: 650; }
     .why-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 1rem clamp(1.4rem, 4vw, 4rem); margin-top: 1rem; }
@@ -269,8 +291,7 @@
     .story-detail-example dt { font-weight: 700; }
     .story-detail-example dd { margin-inline-start: 0; }
     html:has(.workshop-dialog[open]) { overflow: hidden; }
-    .case-story { margin: .95rem 0; padding: .65rem 1rem; background: var(--white); border-block: 1px solid var(--line); }
-    .case-story .ci-jobs, .path-panel .ci-jobs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .path-panel .ci-jobs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .snapshot-set.is-comparing { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
     .snapshot-set.is-comparing :is(.azure-scroll img, .snapshot-panel) { min-width: 0; }
     .snapshot-set.is-comparing .doc-evidence { grid-template-columns: minmax(0, 1fr); }
@@ -428,12 +449,13 @@
     footer { padding: 1rem 0 1.5rem; border-top: 1px solid var(--line); font-size: .92rem; }
     @media screen and (max-width: 75rem) { .pipeline-pan { display: inline; } }
     @media screen and (max-width: 48rem) {
-      .why-grid, .case-index, .workflow-lanes, .snapshot-spec, .doc-evidence { grid-template-columns: minmax(0, 1fr); }
+      .why-grid, .case-index, .workflow-lanes, .snapshot-spec, .doc-evidence, .team-flow-steps, .term-grid { grid-template-columns: minmax(0, 1fr); }
       .map-detail-grid { grid-template-columns: minmax(0, 1fr); }
       .map-key p { flex-basis: 100%; margin: 0; }
       .terms { columns: 1; }
       .comic ol { grid-template-columns: minmax(0, 1fr); }
       .comic-panel { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); grid-template-rows: auto; align-items: center; }
+      .comic-sequence img { height: auto; background: transparent; }
       .comic-caption { border-top: 0; border-inline-start: 1px solid #d5c8b4; padding: .45rem 2.15rem .45rem .55rem; }
       .comic-more { right: .35rem; top: .45rem; }
       .comic-caption .comic-meaning { font-size: .85rem; }
@@ -448,7 +470,7 @@
       .ci-jobs { grid-template-columns: minmax(0, 1fr); }
       .ci-jobs li:not(:last-child)::after { content: "↓"; top: 100%; left: 1rem; line-height: var(--lane-gap); }
       .case-flow .ci-jobs, .evidence-pair { grid-template-columns: minmax(0, 1fr); }
-      .case-story .ci-jobs, .path-panel .ci-jobs, .snapshot-set.is-comparing { grid-template-columns: minmax(0, 1fr); }
+      .path-panel .ci-jobs, .snapshot-set.is-comparing { grid-template-columns: minmax(0, 1fr); }
       .workshop-dialog .control, .present-trigger { min-height: 2.75rem; }
       .presentation-body .deck-svg { min-width: 0; }
       .presentation-body .deck-rail { flex-wrap: nowrap; overflow-x: auto; }
@@ -463,6 +485,7 @@
       body { background: white; font-size: 10.5pt; line-height: 1.42; }
       .wrap { width: 100%; }
       .masthead .wrap { padding: .85rem 1.35rem .6rem; }
+      .masthead-intro { grid-template-columns: minmax(0, 1fr) 13rem; }
       h1 { font-size: 29pt; }
       h2 { font-size: 19pt; }
       h3 { font-size: 13pt; }
@@ -481,8 +504,17 @@
       .deck-slide.is-print-canonical[hidden] { display: block !important; }
       .comic { margin-block: .35rem; }
       .comic ol { gap: .35rem; padding: .35rem; }
-      .comic-panel img { max-height: 154px; }
-      .comic-caption { padding: .35rem .55rem; }
+      #cross-team-flow { padding-block: .65rem .6rem; }
+      #cross-team-flow .section-intro { margin-block: .2rem .35rem; }
+      .team-flow { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); align-items: start; gap: .6rem 1rem; margin: 0; }
+      .team-flow img { height: 9.5rem; object-fit: cover; object-position: center 54%; }
+      .team-flow-steps { display: grid; grid-template-columns: 1fr; gap: .25rem; margin: 0 0 .2rem; font-size: 9.5pt; }
+      .team-flow-steps li { padding-top: .16rem; border-width: 1px; }
+      .team-flow-steps :is(strong, span) { display: inline; }
+      .team-flow-caption { font-size: 9pt; }
+      .comic-panel { grid-template-columns: 6rem minmax(0, 1fr); grid-template-rows: auto; align-items: center; }
+      .comic-panel img, #how-deck .comic-panel img { max-height: 5.75rem; height: auto; }
+      .comic-caption { padding: .35rem .55rem; border-top: 0; border-inline-start: 1px solid #d5c8b4; }
       .comic-caption strong { font-size: 12pt; }
       .comic-caption .comic-meaning, .comic figcaption { font-size: 9.5pt; }
       .comic figcaption { margin-block: .25rem 0; }
@@ -491,8 +523,11 @@
       #why-deck .deck-lead { max-width: none; }
       #what { padding-block: .25rem 0; border: 0; break-inside: avoid; }
       #what .section-intro { margin-bottom: .4rem; }
-      :is(#why-deck, #what-deck) .deck-bar { display: none; }
-      #what-deck .comic-panel img { max-height: 124px; }
+      :is(#why-deck, #what-deck, #how-deck) .deck-bar { display: none; }
+      #how { padding-bottom: .25rem; }
+      #how > .section-intro { max-width: none; margin-block: .25rem .35rem; }
+      #how > p:not(.section-intro), #how-deck .deck-lead, #how-deck .comic figcaption { display: none; }
+      #how-deck .deck-stage { padding-block: .4rem; }
       .deck-svg-wrap { overflow: visible; margin-block: .35rem; }
       .deck-svg { min-width: 0; width: 100%; max-height: 225px; }
       .deck-columns { margin-top: .35rem; padding-top: .35rem; gap: .35rem 1rem; }
@@ -509,7 +544,7 @@
       .diagram-scroll, .diagram-scroll.is-compact { max-height: none; overflow: visible; }
       .map { width: 100% !important; }
       main > section { padding-block: .85rem; }
-      #flow, #approaches, #how, #delivery, #option-two-local, #glossary { break-before: page; border: 0; }
+      #flow, #approaches, #how, #delivery, #option-two-local, #review { break-before: page; border: 0; }
       #option-two-local, #agentic-ci, #review { padding-block: .6rem; break-inside: avoid; }
       #option-two-local .workflow-lanes, #agentic-ci .workflow-lanes { margin-block: .55rem; }
       #flow { padding-top: .85rem; }
@@ -544,8 +579,13 @@
 <body>
   <header class="masthead">
     <div class="wrap">
-      <h1>Doc as Code</h1>
-      <p class="lead">Keep the diagrams and guides people already use aligned with reviewed code. One workshop example follows a proposed move from a virtual machine to Azure Kubernetes Service.</p>
+      <div class="masthead-intro">
+        <div>
+          <h1>Doc as Code</h1>
+          <p class="lead">Keep the diagrams and guides people already use aligned with reviewed code. One workshop example follows a proposed move from a virtual machine to Azure Kubernetes Service.</p>
+        </div>
+        <img class="hero-mark" src="./assets/doc-as-code-mark.svg" alt="A stack of pages breaks into square tiles and then 0s and 1s, a visual metaphor for treating docs like code." width="480" height="190" fetchpriority="high">
+      </div>
       <nav class="chapters" aria-label="Document sections">
         <a href="#why">Why</a>
         <a href="#what">What</a>
@@ -563,14 +603,30 @@
       <h2 id="run-title">Facilitator mode · 120-minute workshop plan</h2>
       <p>This is the two-hour Doc as Code segment of your four-hour customer workshop. Every major section now includes an interactive <strong>Previous / Next</strong> visual slide deck so you can present directly from this page without PowerPoint, plus inline verified code, diagrams, and live GitHub Actions proofs.</p>
       <ol class="run-sheet" role="list">
-        <li><b>0–20 min</b><span><a href="#why">Why · Opening comic and five lessons.</a> Start with the outdated runbook, then use the clickable diagrams to explain what changes, what stays put, and how rules and Copilot differ.</span></li>
-        <li><b>20–45 min</b><span><a href="#what">What · Portable core and Copilot.</a> Start with the second comic, then use the bit-by-bit explainer, <a href="#flow">Pipeline overview</a>, and <a href="#explore">Architecture map</a>.</span></li>
-        <li><b>45–65 min</b><span><a href="#how">How · 6-stage VM → AKS walkthrough.</a> Click Next through all 6 stages, toggle official Azure VM/AKS diagrams, and compare the 8 paired repository files.</span></li>
+        <li><b>0–20 min</b><span><a href="#cross-team-flow">Open with the two destinations.</a> Then use the <a href="#why">Why comic and five lessons</a> to explain what goes wrong when the runbook is out of date.</span></li>
+        <li><b>20–45 min</b><span><a href="#what">What · Portable core and Copilot.</a> Use the comic and the <a href="#fingerprints">commit ID and hash slide</a> before the <a href="#flow">Pipeline overview</a> and <a href="#explore">Architecture map</a>.</span></li>
+        <li><b>45–65 min</b><span><a href="#how">How · VM to AKS walkthrough.</a> Open the three comic scenes, then use Next through the six stages. Compare the Azure diagrams and the eight paired repository files.</span></li>
         <li><b>65–85 min</b><span><a href="#delivery">Option 1 · Local terminal &amp; GitHub Actions.</a> Show stale check failure, local render, and live GitHub sync updating rolling Central Docs PR #1.</span></li>
         <li><b>85–100 min</b><span><a href="#option-two-local">Option 2A · Spec-driven local Copilot.</a> Run or walk through <code>dac-architecture-guardian</code> updating HPA <code>4–24 → 4–28 pods</code> from <code>.github/</code> specs.</span></li>
         <li><b>100–115 min</b><span><a href="#agentic-ci">Option 2B &amp; 2C · Keyless CI &amp; Cloud Agent.</a> Show real live OIDC runs <code>#44971666753</code> &amp; <code>#44972101526</code> + Cloud Agent Draft PR #3 (<code>ADR-003</code>).</span></li>
         <li><b>115–120 min</b><span><a href="#evidence-tour">Evidence &amp; Links Tour + Decision recap.</a> Step Next-by-Next through any live GitHub link the audience asks to inspect, then close at <a href="#review">Review</a>.</span></li>
       </ol>
+    </section>
+
+    <section id="cross-team-flow" aria-labelledby="team-flow-title">
+      <h2 id="team-flow-title">One process for workload and platform documentation</h2>
+      <p class="section-intro">Infrastructure, deployment, and API changes can come from different teams and repositories. The same Doc as Code (DaC) engine can run against each workload, keeping its docs and the platform team’s shared guides aligned.</p>
+      <figure class="team-flow">
+        <img src="./assets/cross-team-docs.webp" alt="Illustration of engineering teams feeding source sheets into one document processor, with blue workload handbooks and teal platform guides coming out separately." width="1600" height="540" decoding="async">
+        <figcaption>
+          <ol class="team-flow-steps" role="list">
+            <li><strong>Teams change the source.</strong> <span>Infrastructure, deployment settings, and API contracts live in version-controlled files.</span></li>
+            <li><strong>The engine reads the change.</strong> <span>The translator extracts supported facts into one record and renders updated sections.</span></li>
+            <li><strong>Two sets of existing docs get an update.</strong> <span>Developers update Markdown and diagrams alongside the code. An opt-in sync proposes updates to shared guides, diagrams, and the service catalog in a separate central pull request.</span></li>
+          </ol>
+          <p class="team-flow-caption">The workshop demonstrates this pattern on one service. The guides remain readable text, their links stay the same, and the owners’ notes outside the generated sections are preserved.</p>
+        </figcaption>
+      </figure>
     </section>
 
     <section id="why" aria-labelledby="why-title">
@@ -1027,7 +1083,7 @@
         <figcaption class="deck-caption">The portable core and the bit-by-bit explainer</figcaption>
         <div class="deck-nav-inline" data-deck-controls hidden>
           <button type="button" class="control" data-deck-prev disabled>← Previous</button>
-          <output class="deck-counter" data-deck-status aria-live="polite">Step 1 of 6</output>
+          <output class="deck-counter" data-deck-status aria-live="polite">Step 1 of 7</output>
           <button type="button" class="control" data-deck-next>Next step →</button>
         </div>
       </div>
@@ -1129,8 +1185,27 @@
       </ul>
             </div>
           </div>
-          <div class="deck-qa"><strong>Audience check:</strong> Analogy for non-developers: <em>“Think of it like accounting software—when line items change in the ledger, the balance sheet updates automatically instead of someone retyping numbers in PowerPoint.”</em></div>
+          <div class="deck-qa"><strong>Audience check:</strong> If a catalogue and its diagrams read from the same inventory, which updates still need a person to review them?</div>
           <aside class="facilitator deck-facilitator" aria-label="Plain-English basics facilitator cue" hidden><p><strong>20–24 min · Level-set vocabulary:</strong> Spend two minutes here so non-coding product and service owners feel completely comfortable before seeing the compiler pipeline.</p></aside>
+        </article>
+
+        <article class="deck-slide" id="fingerprints" role="tabpanel" aria-labelledby="what-deck-tab-fingerprints" data-deck-anchor hidden>
+          <header class="deck-slide-head"><h3>A Git commit ID and an architecture hash answer different questions</h3></header>
+          <p class="deck-lead">Think of a shipment: the tracking number identifies <em>which shipment</em> you received. A fingerprint of its packing list tells you whether <em>the listed contents</em> changed.</p>
+          <dl class="term-grid">
+            <div><dt>Git commit ID (often called a SHA)</dt><dd>The version receipt. It points to the exact Git revision used to generate the guides. The provenance file calls it <code>sourceCommit</code>.</dd></div>
+            <div><dt>Hash and SHA-256</dt><dd>A hash is a fingerprint calculated from input. SHA-256 is one recipe for making one. It produces 256 bits, usually shown as 64 hexadecimal characters.</dd></div>
+            <div><dt>DaC semantic hash</dt><dd>The fingerprint of the architecture facts the tool extracted, not of every line in the repository. The provenance file calls it <code>semanticHash</code>.</dd></div>
+          </dl>
+          <div class="deck-columns receipt-cases">
+            <div class="deck-col"><h4>A comment changes</h4><p>A new Git commit gets a new ID. A comment-only edit leaves the modeled facts and their hash unchanged, so it does not require an architecture update.</p></div>
+            <div class="deck-col"><h4>The scaling limit changes from 24 to 28</h4><p>The declared maximum changes, so the semantic hash changes too. The delta (model comparison) identifies the setting; the renderer updates its label in the existing Mermaid diagram.</p></div>
+          </div>
+          <details><summary>See the real fingerprint and the technical distinction</summary>
+            <p>In the <a href="#option-two-local">recorded local example</a>, the model fingerprint changed from <code>9d095541532117cb…</code> to <code>d66b2d9b9512d880…</code>. The change was reviewed in a local diff, not pushed. Git hashes a commit object that refers to the snapshot and its history. DaC uses SHA-256 on normalized architecture JSON instead. Neither value reports whether anything is running in Azure.</p>
+            <p><a href="#compare-provenance">Compare the actual provenance receipts →</a></p>
+          </details>
+          <aside class="facilitator deck-facilitator" aria-label="Commit and fingerprint facilitator cue" hidden><p><strong>Say:</strong> “The commit tells us where to look. The fingerprint tells us whether the facts changed. The delta tells us what to update.”</p></aside>
         </article>
 
         <article class="deck-slide" id="what-deck-panel-1" role="tabpanel" aria-labelledby="what-deck-tab-1" hidden>
@@ -1138,49 +1213,51 @@
             <h3>What we built: two connected GitHub repositories with distinct responsibilities</h3>
             
           </header>
-          <p class="deck-lead">Separating the source workload repository from the central platform documentation hub mirrors real enterprise landing-zone ownership.</p>
-          <div class="deck-svg-wrap" role="img" aria-label="Diagram of Repo 1 dac-workload-modernization connected to Repo 2 dac-central-platform-docs">
-        <svg viewBox="0 0 1160 290" class="deck-svg">
+          <p class="deck-lead">The workload team maintains its code and nearby docs. The platform team reviews the shared guides in a separate repository.</p>
+          <div class="deck-svg-wrap" role="img" aria-label="The workload repository sends a central documentation proposal. It can call the reusable review workflow maintained in the central repository.">
+        <svg viewBox="0 0 1160 284" class="deck-svg">
           <defs>
-            <marker id="wt2-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#78d6c6"/></marker>
+            <marker id="wt2-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#9edccf"/></marker>
+            <marker id="wt2-reuse" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#9bc4ec"/></marker>
           </defs>
-          <rect x="0" y="0" width="1160" height="290" rx="8" fill="#0d1e33"/>
-          <rect x="28" y="24" width="500" height="242" rx="8" fill="#152f4d" stroke="#64a8ec" stroke-width="2"/>
-          <text x="48" y="54" fill="#ffffff" font-size="16" font-weight="700">Repo 1 · dac-workload-modernization</text>
-          <text x="48" y="75" fill="#9fc8f0" font-size="12">Owned by Application &amp; Workload Engineering</text>
-          <text x="48" y="104" fill="#d4e9ff" font-family="Consolas,monospace" font-size="12">• infra/terraform/ &amp; infra/bicep/   (Landing zone IaC)</text>
-          <text x="48" y="126" fill="#d4e9ff" font-family="Consolas,monospace" font-size="12">• deploy/k8s/ &amp; deploy/systemd/     (Runtime manifests)</text>
-          <text x="48" y="148" fill="#d4e9ff" font-family="Consolas,monospace" font-size="12">• src/server.mjs &amp; openapi.yaml     (App + API contract)</text>
-          <text x="48" y="170" fill="#d4e9ff" font-family="Consolas,monospace" font-size="12">• packages/dac-translator/          (0-dep Node 20+ CLI)</text>
-          <text x="48" y="192" fill="#a8ebe0" font-family="Consolas,monospace" font-size="12">• .github/ + specs/doc-as-code/     (Spec-driven Copilot)</text>
-          <text x="48" y="214" fill="#d4e9ff" font-family="Consolas,monospace" font-size="12">• README.md &amp; docs/architecture.md  (Local developer docs)</text>
-          <text x="48" y="242" fill="#8fd0ff" font-size="12">main = VM baseline · PR #1 = VM → Private AKS proposal</text>
+          <rect x="0" y="0" width="1160" height="284" rx="8" fill="#0d1e33"/>
+          <g data-diagram-box>
+            <rect x="28" y="24" width="456" height="236" rx="8" fill="#152f4d" stroke="#64a8ec" stroke-width="2"/>
+            <text x="50" y="56" fill="#fff" font-size="20" font-weight="700">Workload repository</text>
+            <text x="50" y="80" fill="#b6daff" font-family="Consolas,monospace" font-size="14">dac-workload-modernization</text>
+            <text x="50" y="115" fill="#e6f2ff" font-size="15">Infrastructure, deployment, and API declarations</text>
+            <text x="50" y="140" fill="#e6f2ff" font-size="15">Translator and local Copilot specification</text>
+            <text x="50" y="165" fill="#e6f2ff" font-size="15">Existing README and architecture diagram</text>
+            <text x="50" y="220" fill="#b6daff" font-size="14">main: VM baseline</text>
+            <text x="50" y="242" fill="#b6daff" font-size="14">PR #1: proposed private AKS</text>
+          </g>
 
-          <path d="M528 118H624" stroke="#78d6c6" stroke-width="2.2" marker-end="url(#wt2-arr)"/>
-          <text x="576" y="106" text-anchor="middle" fill="#a8ebe0" font-size="11" font-weight="700">Rolling Sync PR #1</text>
-          <path d="M632 178H534" stroke="#7cc0ff" stroke-width="1.8" stroke-dasharray="5 3" marker-end="url(#wt2-arr)"/>
-          <text x="580" y="198" text-anchor="middle" fill="#9fc8f0" font-size="11">Reusable gh-aw lockfile</text>
+          <g data-diagram-box>
+            <rect x="676" y="24" width="456" height="236" rx="8" fill="#143a40" stroke="#78d6c6" stroke-width="2"/>
+            <text x="698" y="56" fill="#fff" font-size="20" font-weight="700">Central platform docs</text>
+            <text x="698" y="80" fill="#b9ece2" font-family="Consolas,monospace" font-size="14">dac-central-platform-docs</text>
+            <text x="698" y="115" fill="#e6fff8" font-size="15">Service catalog, four guides, and provenance</text>
+            <text x="698" y="140" fill="#e6fff8" font-size="15">Reusable GitHub review workflow</text>
+            <text x="698" y="163" fill="#fbe7ae" font-family="Consolas,monospace" font-size="14">dac-agentic-review.lock.yml</text>
+            <text x="698" y="220" fill="#b9ece2" font-size="14">PR #1: synchronized AKS docs</text>
+            <text x="698" y="242" fill="#b9ece2" font-size="14">Draft PR #3: separate decision record</text>
+          </g>
 
-          <rect x="632" y="24" width="500" height="242" rx="8" fill="#143a40" stroke="#78d6c6" stroke-width="2"/>
-          <text x="652" y="54" fill="#ffffff" font-size="16" font-weight="700">Repo 2 · dac-central-platform-docs</text>
-          <text x="652" y="75" fill="#a8ebe0" font-size="12">Owned by Central Platform Architecture &amp; SRE Governance</text>
-          <text x="652" y="104" fill="#dcfff7" font-family="Consolas,monospace" font-size="12">• README.md                         (Enterprise service catalog)</text>
-          <text x="652" y="126" fill="#dcfff7" font-family="Consolas,monospace" font-size="12">• products/grid-telemetry-service/  (4 audience guides):</text>
-          <text x="668" y="146" fill="#c7f5ec" font-family="Consolas,monospace" font-size="12">architecture · admin · user · contributor-guide.md</text>
-          <text x="652" y="168" fill="#dcfff7" font-family="Consolas,monospace" font-size="12">• dac-provenance.json               (Commit SHA + IR hash)</text>
-          <text x="652" y="190" fill="#fde68a" font-family="Consolas,monospace" font-size="12">• .github/workflows/dac-agentic-review (.md + .lock.yml)</text>
-          <text x="652" y="212" fill="#dcfff7" font-family="Consolas,monospace" font-size="12">• .github/agents/dac-central-curator (Cloud Agent ADR-003)</text>
-          <text x="652" y="242" fill="#a8ebe0" font-size="12">main = VM baseline · PR #1 = Synced AKS · Draft PR #3 = ADR-003</text>
+          <text x="580" y="96" text-anchor="middle" fill="#c3f2e8" font-size="15" font-weight="700">Docs proposal</text>
+          <path d="M491 110H669" stroke="#9edccf" stroke-width="2.2" marker-end="url(#wt2-arr)"/>
+          <text x="580" y="143" text-anchor="middle" fill="#bacfe7" font-size="14" font-weight="700">Reusable review</text>
+          <text x="580" y="162" text-anchor="middle" fill="#bacfe7" font-size="13">workflow definition</text>
+          <path d="M669 178H491" stroke="#9bc4ec" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#wt2-reuse)"/>
         </svg>
       </div>
           <div class="deck-columns">
             <div class="deck-col">
-              <h4>Why two repositories matter in enterprise</h4>
+              <h4>Who owns what</h4>
               <p>Developers work fast inside their service repository (<code>dac-workload-modernization</code>), while platform architects, security reviewers, and operations teams govern cross-estate standards in <code>dac-central-platform-docs</code> via <code>CODEOWNERS</code>.</p>
             </div>
             <div class="deck-col">
-              <h4>How they link together cleanly</h4>
-              <p><code>dac-manifest.json</code> in Repo 1 declares the target repository (<code>gitpavleenbali/dac-central-platform-docs</code>) and product folder (<code>products/grid-telemetry-service</code>), keeping routing explicit and version-controlled.</p>
+              <h4>How the handoff works</h4>
+              <p><code>dac-manifest.json</code> names the central repository and product folder. The workload also calls a pinned copy of the central review workflow. The <a href="#workflow-terms">workflow lock file and run logs</a> serve different purposes.</p>
             </div>
           </div>
           <div class="deck-qa"><strong>Audience check:</strong> Both repositories remain on the VM baseline on <code>main</code> with open PRs so you can replay or inspect the exact VM → AKS transition anytime.</div>
@@ -1263,35 +1340,35 @@
 
         <article class="deck-slide" id="what-deck-panel-3" role="tabpanel" aria-labelledby="what-deck-tab-3" hidden>
           <header class="deck-slide-head">
-            <h3>Technology stack: zero-dependency Node.js 20+ CLI + keyless GitHub agentic workflows</h3>
+            <h3>The tools used in each step</h3>
             
           </header>
-          <p class="deck-lead">Every layer is built on standard, auditable primitives with zero third-party npm supply-chain dependencies in the translator CLI.</p>
+          <p class="deck-lead">Each row starts with an everyday comparison. The file and implementation columns show where to find the actual behavior.</p>
           <div class="table-scroll" tabindex="0" role="region" aria-label="Doc as Code technology stack">
         <table class="comparison-table">
           <thead><tr><th scope="col">Layer</th><th scope="col">Module / File</th><th scope="col">Technology &amp; Runtime</th><th scope="col">Responsibility</th></tr></thead>
           <tbody>
-            <tr><th scope="row">1. CLI Entrypoint</th><td><code>bin/dac-translator.mjs</code></td><td>Node.js &gt;= 20 ES Modules (<code>node:fs</code>, <code>path</code>, <code>crypto</code>, <code>child_process</code>)</td><td>Exposes <code>extract</code>, <code>diff</code>, <code>render</code>, <code>verify</code>, and <code>sync-central-pr</code> with zero npm dependencies.</td></tr>
-            <tr><th scope="row">2. Code Parsers</th><td><code>src/extractors/*.mjs</code></td><td>Deterministic HCL, Bicep, K8s YAML, <code>systemd</code> &amp; OpenAPI 3.1 parsers</td><td>Strips comments preserving URLs, resolves <code>var.*</code> / <code>local.*</code>, extracts compute, network &amp; API contracts.</td></tr>
-            <tr><th scope="row">3. IR &amp; Delta Engine</th><td><code>src/ir/schema.mjs</code>, <code>diff-engine.mjs</code></td><td>Canonical JSON + SHA-256 semantic fingerprint</td><td>Normalizes facts, flags architecture changes vs. formatting noise, and classifies hosting transitions.</td></tr>
-            <tr><th scope="row">4. Compilers &amp; Gate</th><td><code>src/renderers/*.mjs</code>, <code>validators/*.mjs</code></td><td>Mermaid flowchart compiler + marker slicer + prose verifier</td><td>Generates quoted GitHub-safe Mermaid, updates <code>BEGIN/END DAC</code> blocks, and locks human prose byte-for-byte.</td></tr>
-            <tr><th scope="row">5. PR Publisher</th><td><code>src/publishers/github-pr-publisher.mjs</code></td><td>Git CLI + GitHub REST API</td><td>Force-updates rolling branch <code>dac-sync/&lt;service&gt;</code> and opens/updates Central Docs PR #1 in place.</td></tr>
-            <tr><th scope="row">6. Spec-Driven Local AI</th><td><code>.github/agents</code>, <code>skills</code>, <code>prompts</code>, <code>specs/</code></td><td>GitHub Copilot Chat (VS Code) &amp; Copilot CLI</td><td>Runs <code>dac-architecture-guardian</code> against explicit acceptance criteria before code is pushed.</td></tr>
-            <tr><th scope="row">7. Hosted reviews</th><td><code>dac-agentic-review.md</code> (<code>.lock.yml</code>)</td><td>GitHub Agentic Workflows and GitHub OIDC → Microsoft Entra → Azure AI Foundry</td><td>Option 2B attaches checked patches without an inference key. Separately, Option 2C drafts <code>ADR-003</code>.</td></tr>
+            <tr><th scope="row">1. Command-line interface<span class="tech-plain">The front door: one command starts a job.</span></th><td><code>bin/dac-translator.mjs</code></td><td>Node.js 20+ ES modules</td><td><code>render</code> updates docs; <code>verify</code> checks freshness. The translator has no runtime npm dependencies.</td></tr>
+            <tr><th scope="row">2. Parsers<span class="tech-plain">Readers that pull facts out of different file formats.</span></th><td><code>src/extractors/*.mjs</code></td><td>Terraform HCL, Bicep, Kubernetes YAML, <code>systemd</code>, OpenAPI</td><td>Read supported declarations, such as which subnet a node pool uses.</td></tr>
+            <tr><th scope="row">3. Architecture model and delta<span class="tech-plain">Two inventories, with the changes highlighted.</span></th><td><code>src/ir/schema.mjs</code>, <code>diff-engine.mjs</code></td><td>Normalized JSON and a SHA-256 fingerprint</td><td>The fingerprint flags changes. The delta can show a VM removed and AKS added.</td></tr>
+            <tr><th scope="row">4. Renderers and checks<span class="tech-plain">Replace one page in a binder without touching the notes.</span></th><td><code>src/renderers/*.mjs</code>, <code>validators/*.mjs</code></td><td>Mermaid, Markdown markers, and validation</td><td>Rebuild diagrams inside <code>BEGIN/END DAC</code> blocks and check that owner-written text stays intact.</td></tr>
+            <tr><th scope="row">5. Pull request publisher<span class="tech-plain">Send the update to the same review inbox.</span></th><td><code>src/publishers/github-pr-publisher.mjs</code></td><td>Git and the GitHub REST API</td><td>With authorization, updates <code>dac-sync/&lt;service&gt;</code> and reuses the open central pull request.</td></tr>
+            <tr><th scope="row">6. Spec-driven local Copilot<span class="tech-plain">An assistant working from an agreed checklist.</span></th><td><code>.github/agents/</code>, <code>.github/skills/</code>, <code>specs/</code></td><td>Copilot in VS Code or Copilot CLI</td><td>The recorded CLI run updated the scaling label and passed the local checks. The developer reviews the diff.</td></tr>
+            <tr><th scope="row">7. Hosted review<span class="tech-plain">A draft note for the reviewer, not a decision.</span></th><td><code>dac-agentic-review.md</code> and <code>dac-agentic-review.lock.yml</code></td><td>GitHub Actions and short-lived Azure AI Foundry authentication</td><td>Option 2B attaches a checked patch. Separately, Option 2C drafts a decision record in its own pull request.</td></tr>
           </tbody>
         </table>
       </div>
           <div class="deck-columns">
             <div class="deck-col">
-              <h4>Zero npm supply-chain surface in Option 1</h4>
+              <h4>No runtime npm dependencies in Option 1</h4>
               <p><code>packages/dac-translator/package.json</code> has no runtime npm dependencies. Teams still review the repository, runtime, and workflow permissions under their own policies.</p>
             </div>
             <div class="deck-col">
-              <h4>Zero static inference secrets in Option 2B</h4>
-              <p>Instead of long-lived PATs or API keys, GitHub Actions exchanges short-lived OIDC tokens (<code>id-token: write</code>) with a least-privilege Azure User-Assigned Managed Identity scoped strictly to Azure AI Foundry.</p>
+              <h4>A short-lived credential for Option 2B inference</h4>
+              <p>GitHub Actions uses OpenID Connect (OIDC) to obtain a scoped token for Azure AI Foundry. This avoids storing an inference key. The GitHub publisher uses separate repository access.</p>
             </div>
           </div>
-          <div class="deck-qa"><strong>Audience check:</strong> Security check: <em>“Are there any OpenAI API keys or Copilot PATs stored in GitHub Secrets for Option 2B?”</em> Zero—authentication is 100% federated GitHub OIDC.</div>
+          <div class="deck-qa"><strong>Audience check:</strong> Which credential is short-lived? The Azure inference credential, not necessarily the publisher’s separate GitHub credential.</div>
           <aside class="facilitator deck-facilitator" aria-label="Tech stack facilitator cue" hidden><p><strong>33–38 min · Security &amp; platform credibility:</strong> Highlight zero npm dependencies for Option 1 and keyless Entra OIDC for Option 2B.</p></aside>
         </article>
 
@@ -1356,10 +1433,11 @@
       <div class="deck-rail" role="tablist" aria-label="Plain-language Doc as Code walkthrough" data-deck-tabs hidden>
         <button type="button" role="tab" id="what-deck-tab-intro" data-slide="intro" aria-selected="true" aria-controls="portable-core-story" tabindex="0"><span>Portable core comic</span></button>
         <button type="button" role="tab" id="what-deck-tab-0" data-slide="0" aria-selected="false" aria-controls="what-deck-panel-0" tabindex="-1"><b aria-hidden="true">1</b><span>Plain-English basics</span></button>
-        <button type="button" role="tab" id="what-deck-tab-1" data-slide="1" aria-selected="false" aria-controls="what-deck-panel-1" tabindex="-1"><b aria-hidden="true">2</b><span>Two-repo setup</span></button>
-        <button type="button" role="tab" id="what-deck-tab-2" data-slide="2" aria-selected="false" aria-controls="what-deck-panel-2" tabindex="-1"><b aria-hidden="true">3</b><span>5 compiler rules</span></button>
-        <button type="button" role="tab" id="what-deck-tab-3" data-slide="3" aria-selected="false" aria-controls="what-deck-panel-3" tabindex="-1"><b aria-hidden="true">4</b><span>Tech stack</span></button>
-        <button type="button" role="tab" id="what-deck-tab-4" data-slide="4" aria-selected="false" aria-controls="what-deck-panel-4" tabindex="-1"><b aria-hidden="true">5</b><span>Using the 2 maps below</span></button>
+        <button type="button" role="tab" id="what-deck-tab-fingerprints" data-slide="fingerprints" aria-selected="false" aria-controls="fingerprints" tabindex="-1"><b aria-hidden="true">2</b><span>Commit IDs &amp; hashes</span></button>
+        <button type="button" role="tab" id="what-deck-tab-1" data-slide="1" aria-selected="false" aria-controls="what-deck-panel-1" tabindex="-1"><b aria-hidden="true">3</b><span>Two-repo setup</span></button>
+        <button type="button" role="tab" id="what-deck-tab-2" data-slide="2" aria-selected="false" aria-controls="what-deck-panel-2" tabindex="-1"><b aria-hidden="true">4</b><span>Five compiler rules</span></button>
+        <button type="button" role="tab" id="what-deck-tab-3" data-slide="3" aria-selected="false" aria-controls="what-deck-panel-3" tabindex="-1"><b aria-hidden="true">5</b><span>Tech stack</span></button>
+        <button type="button" role="tab" id="what-deck-tab-4" data-slide="4" aria-selected="false" aria-controls="what-deck-panel-4" tabindex="-1"><b aria-hidden="true">6</b><span>Using the two maps</span></button>
       </div>
       <div class="deck-footer" data-deck-footer hidden>
         <button type="button" class="control" data-deck-prev-bottom disabled>← Previous step</button>
@@ -1507,7 +1585,7 @@
           <span class="key-boundary">DaC Translator boundary</span>
         </figcaption>
       </figure>
-      <p class="pipeline-note" id="pipeline-overview-help">Select a box for its definition and a short code example without leaving this diagram. Fit shows the whole flow; zoom in to read detail. The architecture map below is a separate explorer.</p>
+      <p class="pipeline-note" id="pipeline-overview-help">Select a box for a plain-language definition, an example, and the corresponding code without leaving the diagram. Fit shows the whole flow; zoom in to read the labels. The architecture map below is separate.</p>
       <p data-screen-only><a href="#explore">Open the separate Architecture map →</a></p>
       <div class="flow-popover" id="pipeline-detail" popover="manual" role="region" aria-labelledby="pipeline-detail-title" data-screen-only hidden>
         <header>
@@ -1515,6 +1593,7 @@
           <button class="control" id="pipeline-detail-close" type="button" aria-label="Close pipeline details">×</button>
         </header>
         <p id="pipeline-definition"></p>
+        <p><strong>Example:</strong> <span id="pipeline-analogy"></span></p>
         <label>Code example <select id="pipeline-example"></select></label>
         <pre class="evidence-code" tabindex="0" aria-label="Pinned code example"><code id="pipeline-code"></code></pre>
         <p><a id="pipeline-source" target="_blank" rel="noopener"></a></p>
@@ -1564,9 +1643,10 @@
             <h3 id="map-detail-title" tabindex="-1"></h3>
             <div class="map-detail-grid">
               <div class="map-explanation">
-                <h4 class="detail-label">Definition</h4>
+                <h4 class="detail-label">In everyday terms</h4>
                 <p class="map-caption" id="map-caption"></p>
-                <p id="map-note"></p>
+                <p><strong>Example:</strong> <span id="map-analogy"></span></p>
+                <details><summary>Technical detail</summary><p id="map-note"></p></details>
               </div>
               <section id="source-index" aria-labelledby="source-index-title">
                 <h4 class="detail-label" id="source-index-title">Repository files</h4>
@@ -1688,7 +1768,7 @@
         <a href="#evidence-tour">Guided Evidence &amp; Links Tour</a>
       </nav>
       <!-- BEGIN WORKSHOP:how-deck -->
-<figure class="slide-deck" id="how-deck" data-deck="Stage" data-screen-only>
+<figure class="slide-deck" id="how-deck" data-deck="Stage">
       <div class="deck-bar">
         <figcaption class="deck-caption">Modernization scenario · From the proposed design to the documentation</figcaption>
         <div class="deck-nav-inline" data-deck-controls hidden>
@@ -1698,7 +1778,7 @@
         </div>
       </div>
       <div class="deck-rail" role="tablist" aria-label="Step-by-step VM to AKS modernization walkthrough" data-deck-tabs hidden>
-        <button type="button" role="tab" id="how-deck-tab-0" data-slide="0" aria-selected="true" aria-controls="how-deck-panel-0" tabindex="0"><b aria-hidden="true">1</b><span>Scenario &amp; scope</span></button>
+        <button type="button" role="tab" id="how-deck-tab-0" data-slide="0" aria-selected="true" aria-controls="how-deck-panel-0" tabindex="0"><b aria-hidden="true">1</b><span>Story &amp; scenario</span></button>
           <button type="button" role="tab" id="how-deck-tab-1" data-slide="1" aria-selected="false" aria-controls="how-deck-panel-1" tabindex="-1"><b aria-hidden="true">2</b><span>Code changes</span></button>
           <button type="button" role="tab" id="how-deck-tab-2" data-slide="2" aria-selected="false" aria-controls="how-deck-panel-2" tabindex="-1"><b aria-hidden="true">3</b><span>Option 1 · Sync</span></button>
           <button type="button" role="tab" id="how-deck-tab-3" data-slide="3" aria-selected="false" aria-controls="how-deck-panel-3" tabindex="-1"><b aria-hidden="true">4</b><span>Option 2A · Local</span></button>
@@ -1707,19 +1787,43 @@
       </div>
       <div class="deck-stage">
         
-        <article class="deck-slide" id="how-deck-panel-0" role="tabpanel" aria-labelledby="how-deck-tab-0">
+        <article class="deck-slide is-print-canonical" id="how-deck-panel-0" role="tabpanel" aria-labelledby="how-deck-tab-0">
           <header class="deck-slide-head">
-            <h3>Same service, different way of running it</h3>
-            
+            <h3>The app changes hosts. The guides keep their place.</h3>
           </header>
-          <p class="deck-lead">Think of the VM as the machine where the app runs today in the example. The proposal packages the same app in containers so Kubernetes can run and scale copies of it. The operating guide needs to change even though the app is still Grid Telemetry.</p>
-          <div class="case-story">
-            <ol class="ci-jobs" aria-label="Scenario from baseline to documentation">
-              <li><strong>Before · One virtual machine</strong>The operator checks the service process on the VM.</li>
-              <li><strong>Proposed · Containers on AKS</strong>The operator checks the pods running the app and how updates are rolling out.</li>
-              <li><strong>What the demo shows</strong>The diagram and operator guide change in place. The proposal is not an Azure deployment or a merge.</li>
+          <p class="deck-lead">Grid Telemetry is still the same service. In the proposed design, Azure Kubernetes Service (AKS) runs and scales the containers instead of a single virtual machine running the app as a Linux service.</p>
+          <figure class="comic comic-sequence" id="how-story" data-deck-anchor aria-label="How the change reaches the existing guides, in three scenes">
+            <ol role="list">
+              <li><button class="comic-panel" type="button" data-story-detail="how-change" data-story-title="1 · Change the source" aria-describedby="comic-how-change-meaning" disabled>
+                <img src="./assets/story-how-change.webp" alt="" width="600" height="600" decoding="async">
+                <span class="comic-caption">
+                  <strong>1 · Change the source</strong>
+                  <span class="comic-line">“Same app. Different host.”</span>
+                  <span class="comic-meaning" id="comic-how-change-meaning">The proposal replaces the VM configuration with a Kubernetes deployment.</span>
+                  <span class="comic-more" aria-hidden="true" data-screen-only hidden>+</span>
+                </span>
+              </button></li>
+              <li><button class="comic-panel" type="button" data-story-detail="how-refresh" data-story-title="2 · Workload docs" aria-describedby="comic-how-refresh-meaning" disabled>
+                <img src="./assets/story-how-refresh.webp" alt="" width="600" height="600" decoding="async">
+                <span class="comic-caption">
+                  <strong>2 · Workload docs</strong>
+                  <span class="comic-line">“New diagram. Same bookmark.”</span>
+                  <span class="comic-meaning" id="comic-how-refresh-meaning">The existing Markdown files show the new design. The translator leaves the team’s notes intact.</span>
+                  <span class="comic-more" aria-hidden="true" data-screen-only hidden>+</span>
+                </span>
+              </button></li>
+              <li><button class="comic-panel" type="button" data-story-detail="how-review" data-story-title="3 · Central review" aria-describedby="comic-how-review-meaning" disabled>
+                <img src="./assets/story-how-review.webp" alt="" width="600" height="600" decoding="async">
+                <span class="comic-caption">
+                  <strong>3 · Central review</strong>
+                  <span class="comic-line">“Which guide goes with this change?”</span>
+                  <span class="comic-meaning" id="comic-how-review-meaning">The platform team sees proposed updates to its existing diagrams and guides in a separate pull request.</span>
+                  <span class="comic-more" aria-hidden="true" data-screen-only hidden>+</span>
+                </span>
+              </button></li>
             </ol>
-          </div>
+            <figcaption>One proposed design change, two review surfaces. <span data-comic-help data-screen-only hidden>Select a scene for the actual example.</span></figcaption>
+          </figure>
           <details data-screen-only><summary>See the starting architecture and its documentation</summary>
           <div class="deck-svg-wrap" role="img" aria-label="Before state summary: Linux VM baseline in code and both documentation repositories">
         <svg viewBox="0 0 1160 250" class="deck-svg">
@@ -1753,14 +1857,14 @@
         </svg>
       </div>
           </details>
-          <div class="deck-columns">
+          <div class="deck-columns" data-screen-only>
             <div class="deck-col">
-              <h4>Baseline architecture posture</h4>
+              <h4>What the baseline declares</h4>
               <p>The VM baseline declares a load balancer and Bastion subnet. PostgreSQL and Key Vault have private endpoints. These are source declarations and intended paths, not connectivity tests.</p>
             </div>
             <div class="deck-col">
               <h4>Existing files already in place</h4>
-              <p>Crucially, all 6 documentation files (<code>README.md</code>, <code>docs/architecture.md</code>, and the 4 central guides) already exist on <code>main</code>. Modernization will upgrade them—not create parallel files.</p>
+              <p>The workload README, architecture page, and four central guides already exist on <code>main</code>. The proposed change revises their generated sections rather than creating parallel files.</p>
             </div>
           </div>
           <div class="deck-qa"><strong>Audience check:</strong> If the host changes, how does the operator know which runbook to trust?</div>
@@ -1921,10 +2025,10 @@ index a011b68..3b0bb1d 100644
 
         <article class="deck-slide" id="how-deck-panel-4" role="tabpanel" aria-labelledby="how-deck-tab-4" hidden>
           <header class="deck-slide-head">
-            <h3>Stage 5: Option 2B — Live GitHub Agentic Workflows (gh-aw) across both PR pipelines</h3>
+            <h3>Option 2B · Copilot writes a draft for reviewers in GitHub Actions</h3>
             
           </header>
-          <p class="deck-lead">Executed live on GitHub Actions (#44971666753 & #44972101526) using keyless GitHub OIDC to Azure AI Foundry—producing verified, unapplied architecture.patch artifacts in both repos.</p>
+          <p class="deck-lead">Think of this as a reviewer’s note, not an edit to the guide. The two recorded runs attached checked <code>architecture.patch</code> files. Neither patch was applied.</p>
           <div class="evidence-pair">
         <div class="file-snapshot">
           <header><h4>Live Workload Patch · Run #44971666753 ✓</h4><a href="https://github.com/gitpavleenbali/dac-workload-modernization/actions/runs/44971666753" target="_blank" rel="noopener">Open Run ↗</a></header>
@@ -1979,12 +2083,12 @@ index 546b719..72e449f 100644
       </div>
           <div class="deck-columns">
             <div class="deck-col">
-              <h4>How keyless security & AWF sandboxing work</h4>
-              <p>In both repos, <code>gh-aw</code> v1.2.2 runs Copilot CLI inside the <strong>Agent Workflow Firewall (AWF)</strong> container with <code>--disable-builtin-mcps</code>, bounded <code>dac-evidence/brief.md</code> input, <code>safeoutputs</code> (<code>propose_doc_text</code>), and automated <code>detection</code> threat scanning—authenticated via federated GitHub OIDC (<code>id-token: write</code>) to Azure Managed Identity <code>id-dac-workshop-gh-oidc</code>.</p>
+              <h4>How the workflow limits what the agent can do</h4>
+              <p>The Agent Workflow Firewall (AWF) controls the agent’s outbound network access. The workflow supplies a limited evidence brief, restricts the output to proposal text, and scans it. For inference, GitHub OpenID Connect (OIDC) provides short-lived Azure authentication.</p>
             </div>
             <div class="deck-col">
-              <h4>Deterministicverifier enforces patch safety</h4>
-              <p><code>verify-agent-proposal.mjs</code> checks that Copilot cites <code>aks-grid-telemetry-prod</code>, makes zero claims of production deployment/approval, asks an open cutover/rollback question, touches only <code><!-- BEGIN COPILOT:architecture-review --></code>, and passes <code>git apply --check</code>.</p>
+              <h4>What the verifier checks</h4>
+              <p><code>verify-agent-proposal.mjs</code> checks the cluster name, rejects deployment or approval claims, and expects a cutover or rollback question. It produces a patch for the marked <code>&lt;!-- BEGIN COPILOT:architecture-review --&gt;</code> section and checks it with <code>git apply --check</code>.</p>
             </div>
           </div>
           <div class="deck-qa"><strong>Audience check:</strong> Notice that neither agent pushes to a branch—maintainers review and apply <code>architecture.patch</code> only if they agree.</div>
@@ -6977,6 +7081,15 @@ index 65fd49d..8914f30 100644
           </div>
         </div>
       </div>
+      <details id="workflow-terms" data-screen-only>
+        <summary>In everyday terms: reusable workflow, lock file, and run logs</summary>
+        <dl class="term-grid">
+          <div><dt>Reusable GitHub workflow</dt><dd>One shared checklist. Both repositories can call the same maintained review job instead of keeping separate copies.</dd></div>
+          <div><dt>Agentic workflow lock file</dt><dd>The machine-ready version of that checklist. <code>gh aw compile</code> turns the Markdown workflow into <code>dac-agentic-review.lock.yml</code>; GitHub Actions runs the referenced YAML.</dd></div>
+          <div><dt>Run logs and AWF</dt><dd>The activity record, not the checklist. Logs show what happened on that run, including steps involving the Agent Workflow Firewall (AWF). AWF controls outbound network access. The downloadable patch is a separate artifact.</dd></div>
+        </dl>
+        <p><a href="https://github.com/gitpavleenbali/dac-central-platform-docs/blob/40120177ee2a99fe56ef7b331997c43abf479a44/.github/workflows/dac-agentic-review.lock.yml">Read the compiled workflow</a> · <a href="https://github.com/gitpavleenbali/dac-central-platform-docs/actions/runs/44972101526">Inspect the recorded run</a></p>
+      </details>
       <div data-screen-only>
         <!-- BEGIN WORKSHOP:hosted -->
 <figure class="case-flow">
@@ -7681,21 +7794,23 @@ File Added:       products/grid-telemetry-service/decisions/adr-003-vm-to-aks.md
           <output id="term-count" aria-live="polite"></output>
         </div>
         <div class="terms" id="terms">
-          <details><summary>DaC · Doc as Code</summary><p>Keeping documentation in version control and editing, validating, and reviewing it through the same workflow as code. Generation is one technique, not a requirement of the practice.</p></details>
-          <details><summary>IaC · Infrastructure-as-Code</summary><p>Describing the intended infrastructure in files. Terraform and Bicep tell tools what resources and settings are desired; a declaration is not proof that Azure deployed them.</p></details>
-          <details><summary>HCL, YAML, and OpenAPI</summary><p>HCL is the configuration language used by Terraform. YAML is a text format Kubernetes uses for manifests. OpenAPI is a contract describing HTTP operations, paths, and other API details.</p></details>
-          <details><summary>Parser and taxonomy</summary><p>A parser reads structured syntax. A taxonomy is a classification table that maps resource types to categories and roles, e.g. AKS to compute.</p></details>
-          <details><summary>Canonical IR · Intermediate representation</summary><p>A common JSON model of architecture facts; for example, it combines Terraform's AKS declaration and Kubernetes scaling settings into one record the diagram and guides can use.</p></details>
-          <details><summary>Normalization</summary><p>Putting comparable facts in a stable form before comparison, such as sorting known collections and omitting volatile metadata from the fingerprint.</p></details>
-          <details><summary>SHA-256 · Secure Hash Algorithm, 256-bit</summary><p>A standard one-way function that maps input bytes to a 256-bit digest, commonly shown as 64 hex characters. It is not encryption and does not describe the changed fields.</p></details>
-          <details><summary>Semantic hash</summary><p>A fingerprint of the selected, normalized architecture facts rather than the raw file text. An edit that leaves those facts unchanged can leave the fingerprint unchanged.</p></details>
-          <details><summary>Delta and Git diff</summary><p>A delta describes differences between architecture models: for example an added node or changed SKU. A Git diff shows the lines that changed in files, including generated Markdown.</p></details>
-          <details><summary>Mermaid and SVG</summary><p>Mermaid describes diagrams in text and has an engine that calculates a layout. SVG is the scalable vector graphics format actually drawn in the browser. The translator emits Mermaid, not a screenshot.</p></details>
-          <details><summary>Deterministic and LLM</summary><p>The same normalized inputs and rules produce the same modeled facts and diagrams. The deterministic path does not call a large language model (LLM). The rules cover only supported inputs; provenance metadata can vary.</p></details>
-          <details><summary>Managed block and ADR</summary><p>A managed block is a marked section owned by the generator. An Architecture Decision Record (ADR) captures a decision, its rationale, and its trade-offs. ADRs are maintained separately from managed blocks.</p></details>
-          <details><summary>PR, CODEOWNERS, and provenance</summary><p>A pull request (PR) proposes changes for review. CODEOWNERS identifies reviewers for paths; enforcement depends on repository rules. Provenance records where generated content came from, such as source repo, commit and IR hash.</p></details>
-          <details><summary>AKS, HPA, SKU, and Messaging Unit</summary><p>Azure Kubernetes Service (AKS) runs containers. A Horizontal Pod Autoscaler (HPA) adjusts pod counts within a policy range. A SKU names the product tier or capacity option; a Service Bus Messaging Unit is a Premium capacity allocation.</p></details>
-          <details><summary>CI and GitHub Actions</summary><p>Continuous integration (CI) runs automated checks against source changes. This implementation uses GitHub Actions and a portable command-line interface (CLI).</p></details>
+          <details><summary>DaC · Doc as Code</summary><p>Docs get the same history and review as code. A pull request can show a change to the code and guide together. Teams can edit docs by hand or generate selected parts.</p></details>
+          <details><summary>IaC · Infrastructure as Code</summary><p>The blueprint for the resources you intend to build. Terraform and Bicep can describe a virtual machine or subnet without deploying it.</p></details>
+          <details><summary>HCL, YAML, and OpenAPI</summary><p>Different formats for different instructions. Terraform uses HCL for infrastructure; Kubernetes uses YAML for deployment settings; OpenAPI describes calls such as <code>GET /healthz</code>.</p></details>
+          <details><summary>Parser and taxonomy</summary><p>A reader and a sorting guide. The parser finds an AKS declaration; the taxonomy files it under compute.</p></details>
+          <details><summary>Canonical IR · Intermediate representation</summary><p>One inventory in a standard format. In the JSON record, Terraform’s AKS cluster and Kubernetes’ scaling rules sit alongside each other.</p></details>
+          <details><summary>Normalization</summary><p>Arrange two lists the same way before comparing them. DaC sorts known collections and leaves out changing metadata such as extraction time.</p></details>
+          <details><summary>Git commit ID (SHA)</summary><p>The tracking number for an exact Git revision. <code>sourceCommit</code> tells the reader which revision supplied the generated facts; a shorter ID is an abbreviation.</p></details>
+          <details><summary>SHA-256 · Secure Hash Algorithm, 256-bit</summary><p>A recipe for calculating a fingerprint. It maps input to 256 bits, usually displayed as 64 hexadecimal characters. It is not encryption, and the result doesn’t describe which fields changed.</p></details>
+          <details><summary>Semantic hash</summary><p>A fingerprint of the modeled architecture facts. A Terraform comment can change the commit ID without changing this hash. A new scaling limit changes the model and its fingerprint.</p></details>
+          <details><summary>Delta and Git diff</summary><p>Two lists of changes. The architecture delta might say “AKS added.” A Git diff shows the lines that were edited, including the resulting Mermaid or Markdown.</p></details>
+          <details><summary>Mermaid and SVG</summary><p>Instructions for a drawing, and the drawing itself. Mermaid turns text into a diagram that the browser can render as scalable vector graphics (SVG). DaC generates the text.</p></details>
+          <details><summary>Deterministic and LLM</summary><p>A fixed recipe versus an assistant drafting an explanation. The same supported facts and rules produce the same modeled diagram. A large language model (LLM) can draft text for review; it is not the source of the diagram’s facts.</p></details>
+          <details><summary>Managed block and ADR</summary><p>A refillable page and a decision note. The translator replaces the marked block. An architecture decision record (ADR) explains why a choice was made and remains separate.</p></details>
+          <details><summary>PR, CODEOWNERS, and provenance</summary><p>A review request, an address list, and a receipt. A pull request (PR) proposes a change, CODEOWNERS names reviewers, and provenance points to the exact source revision and model fingerprint.</p></details>
+          <details><summary>AKS, HPA, SKU, and Messaging Unit</summary><p>AKS runs containers; the Horizontal Pod Autoscaler (HPA) adjusts how many pods run. A SKU names a product tier or capacity option. A Messaging Unit is a unit of Service Bus Premium capacity.</p></details>
+          <details><summary>CI and GitHub Actions</summary><p>An automatic inspection station. Continuous integration (CI) checks changes; here, GitHub Actions runs the DaC verification and reports if the committed diagram is stale.</p></details>
+          <details><summary>Reusable workflow, lock file, and logs</summary><p>One checklist, its runnable form, and its activity record. The compiled <code>.lock.yml</code> contains the GitHub Actions definition. Run logs report what happened; they are not input to that workflow.</p></details>
         </div>
         <p id="no-terms" hidden>No terms match this search.</p>
       </details>
@@ -7926,6 +8041,16 @@ File Added:       products/grid-telemetry-service/decisions/adr-003-vm-to-aks.md
         if (presenting?.target === deck) updatePresentation();
       }
 
+      function showLinkedSlide() {
+        const anchor = document.getElementById(location.hash.slice(1));
+        if (!anchor?.hasAttribute('data-deck-anchor')) return false;
+        const index = slides.findIndex(slide => slide.contains(anchor));
+        if (index < 0) return false;
+        showDeckSlide(index);
+        requestAnimationFrame(() => deck.scrollIntoView({ block: 'start' }));
+        return true;
+      }
+
       tabs.forEach((tab, index) => {
         tab.addEventListener('click', () => showDeckSlide(index, index !== current));
         tab.addEventListener('keydown', event => {
@@ -7947,7 +8072,8 @@ File Added:       products/grid-telemetry-service/decisions/adr-003-vm-to-aks.md
       for (const btn of [nextTop, nextBottom].filter(Boolean)) {
         btn.addEventListener('click', () => showDeckSlide((current + 1) % tabs.length, true));
       }
-      showDeckSlide(0);
+      if (!showLinkedSlide()) showDeckSlide(0);
+      if (deck.querySelector('[data-deck-anchor]')) window.addEventListener('hashchange', showLinkedSlide);
       tablist.hidden = false;
       const topControls = deck.querySelector('[data-deck-controls]');
       const bottomControls = deck.querySelector('[data-deck-footer]');
@@ -7996,8 +8122,15 @@ File Added:       products/grid-telemetry-service/decisions/adr-003-vm-to-aks.md
           selectTab(next, true);
         });
       });
-      const linked = panels.findIndex(panel => `#${panel.id}` === location.hash);
-      selectTab(linked < 0 ? 0 : linked);
+      function showLinkedPanel() {
+        const linked = panels.findIndex(panel => `#${panel.id}` === location.hash);
+        if (linked < 0) return false;
+        selectTab(linked);
+        requestAnimationFrame(() => panels[linked].scrollIntoView({ block: 'start' }));
+        return true;
+      }
+      if (!showLinkedPanel()) selectTab(0);
+      window.addEventListener('hashchange', showLinkedPanel);
       tablist.hidden = false;
       sequences.set(group, () => ({ index: current, count: tabs.length, unit: 'View', select: selectTab }));
     }
@@ -8048,6 +8181,18 @@ File Added:       products/grid-telemetry-service/decisions/adr-003-vm-to-aks.md
       'portable-review': [
         'Option 2B is a GitHub Actions workflow that starts with checked evidence and attaches an unapplied Markdown patch. An on-demand cloud agent is separate: Option 2C drafts a decision record in its own pull request.',
         'The workflow can ask how to confirm readiness before switching traffic. It does not decide whether to switch or alter the generated diagram.'
+      ],
+      'how-change': [
+        'The team proposes a different way to run the same app. Infrastructure declarations and deployment manifests change; the Git proposal is not a deployment.',
+        'The old configuration starts a Linux service on a VM. The new configuration declares an AKS cluster and a Kubernetes Deployment for Grid Telemetry.'
+      ],
+      'how-refresh': [
+        'The translator reads the changed declarations and rewrites named sections in the existing files, like replacing a page in a bookmarked guide.',
+        'README.md and docs/architecture.md keep their paths. Their Mermaid source shows the AKS workloads; the team’s notes outside the managed sections stay put.'
+      ],
+      'how-review': [
+        'Once the workload update is ready for review, the opt-in sync proposes matching changes to the existing central catalog and guides. The platform owners still decide whether to merge.',
+        'In the rolling central pull request, the operator guide switches from systemctl status to kubectl rollout status. Its receipt records the exact source commit and architecture hash.'
       ],
       'drift-before': [
         'The baseline is the starting design in Git. It describes the app as a Linux service on a virtual machine.',
@@ -8426,26 +8571,26 @@ File Added:       products/grid-telemetry-service/decisions/adr-003-vm-to-aks.md
     let printDiagramLinks = [];
 
     const componentCopy = {
-      cli: ['The command-line interface (CLI) runs locally or in a continuous integration pipeline.', 'The repository supplies a Node.js 20+ ES module with no npm dependencies and no LLM calls in the deterministic path. Commands: extract, diff, render, verify, and sync-central-pr.'],
-      infra: ['Infrastructure-as-Code (IaC) declares intended resources and settings.', 'Terraform is the primary input in this implementation; Bicep is an alternative. The translator reads the declarations without querying Azure.'],
-      workloads: ['Deployment files describe how the application is configured to run.', 'Kubernetes manifests describe deployment, scaling, and ingress. The virtual machine scenario describes its application process in a systemd service unit.'],
-      contract: ['The API contract describes operations; the service manifest identifies the documentation destination.', 'OpenAPI lists HTTP paths and operations. The service manifest specifies the source repository and the central documentation path.'],
-      iac: ['Extractors translate supported infrastructure syntax into architecture facts.', 'The Terraform extractor removes comments and resolves supported variable and local references. Bicep has a separate extractor. Neither evaluates the full language or replaces a deployment plan.'],
-      workloadParser: ['The workload extractor reads supported runtime settings and API contracts.', 'The extractor recognizes Kubernetes Deployment, Horizontal Pod Autoscaler (HPA), and Ingress settings, along with systemd units and OpenAPI operations.'],
-      taxonomy: ['Rule 1: A classification table assigns a role to each supported resource type.', 'The AZURE_TAXONOMY table gives the renderer consistent categories: boundaries for network groups, compute for hosts, data for stores, and plumbing for supporting resources such as private endpoints.'],
-      subnets: ['Rule 2: Explicit references associate resources or endpoints with subnets.', 'A subnet ID places an Azure Kubernetes Service (AKS) node pool in its subnet. A managed service can be shown with its private endpoint for context, but the endpoint, not the service, occupies the subnet.'],
-      edges: ['Rule 3: Supported networking and identity declarations determine the connections.', 'A Private Link relationship can appear as a solid arrow. Role-based access control (RBAC) can appear as a dotted arrow from an identity to its scope. These relationships do not establish live reachability.'],
-      model: ['The Architecture Intermediate Representation (IR) is the common model for comparison and rendering.', 'JSON represents resources, subnets, relationships, workloads, and endpoints. The renderers consume this model rather than parsing the source files again.'],
-      hash: ['The semantic hash is a SHA-256 fingerprint of normalized architecture facts.', 'Formatting or comments can change the source without changing those facts. The hash indicates whether the modeled facts changed. It is distinct from the Git commit ID and does not identify the fields that changed.'],
-      delta: ['The delta identifies differences between two architecture models.', 'It reports added, removed, or modified resources and changes such as a new hosting model. Central synchronization can be skipped when the compared models are unchanged.'],
-      mermaid: ['The renderer converts the architecture model into Mermaid graph syntax.', 'Rules turn resources into shapes, subnet groupings into subgraphs, and relationships into labeled edges. The output is text, not a fixed-position image.'],
-      markers: ['Rule 5: The generator rewrites named sections inside existing Markdown files.', 'BEGIN DAC and END DAC comments delimit each managed block. The replacement can record the source commit and short model hash. Content outside the blocks is preserved.'],
-      validator: ['Validation checks Mermaid structure and the boundaries of managed text.', 'In addition to syntax checks, a before-and-after comparison detects edits to human-authored prose outside the managed blocks. These checks are not runtime tests.'],
-      local: ['The workload repository carries the documentation for its implementation.', 'The dac:render command updates diagrams in the existing README and architecture document. These changes can be reviewed with the associated source change. Rendering does not require network access.'],
-      publisher: ['A rolling pull request (PR) presents central documentation changes for review.', 'In this workflow, publication is explicitly requested and requires GitHub access and credentials. Git and the GitHub API update a dedicated branch and reuse its open PR. The translator does not merge or deploy changes.'],
-      catalog: ['The index generator refreshes the marked service table in the existing central README alongside the guides.', 'The generated row records the proposed hosting model, region, owner, source revision, and guide links. This is a documented design under review, not a live inventory of deployed resources.'],
-      central: ['The central repository presents the same architecture facts in shared documentation.', 'The architecture, operator, user, and contributor guides are accompanied by provenance, including the source commit and model fingerprint.'],
-      layout: ['Rule 4: Mermaid positions shapes, groups, and routes the connectors.', 'The translator defines what to draw. The Mermaid layout engine determines where to draw it when the Markdown page renders.']
+      cli: ['A command-line interface (CLI) is the front door to the translator.', 'At a terminal, npm run dac:render refreshes the generated sections without opening an editor.', 'Node.js 20+ runs the CLI locally or in continuous integration, without npm runtime dependencies or an AI model. Commands: extract, diff, render, verify, and sync-central-pr.'],
+      infra: ['Infrastructure as Code (IaC) is a blueprint for cloud resources.', 'A Terraform block can describe a virtual machine or an AKS cluster before it exists in Azure.', 'Terraform is the primary input here; Bicep is an alternative. The extractor reads supported declarations without querying Azure.'],
+      workloads: ['Deployment files are the instructions for running the app.', 'A Linux service unit names the process to start; a Kubernetes manifest describes how many copies to run.', 'The extractor reads supported Kubernetes deployment, scaling, and ingress declarations and systemd service settings.'],
+      contract: ['An API contract lists what callers can request. A service manifest gives the docs a destination.', 'OpenAPI says GET /healthz exists. dac-manifest.json gives central docs the address for Grid Telemetry.', 'OpenAPI lists HTTP paths and operations. The service manifest specifies the source repository and central documentation path.'],
+      iac: ['An extractor reads a blueprint and lists the facts it recognizes.', 'It can read a subnet reference in a Terraform declaration and set aside a comment for people.', 'The Terraform extractor removes comments and resolves supported variable and local references. Bicep has a separate extractor. Neither evaluates the full language or replaces a deployment plan.'],
+      workloadParser: ['This extractor reads the app’s operating instructions and API list.', 'It can find maxReplicas: 24 in a Kubernetes file and GET /healthz in the OpenAPI contract.', 'Supported types include Kubernetes Deployment, Horizontal Pod Autoscaler (HPA), and Ingress, plus systemd units and OpenAPI operations.'],
+      taxonomy: ['A taxonomy is a sorting guide for resource types.', 'Like shelf labels in a store: AKS belongs under compute, and PostgreSQL belongs under data.', 'Rule 1: AZURE_TAXONOMY gives the renderer consistent categories for boundaries, compute, data stores, and supporting resources such as private endpoints.'],
+      subnets: ['A subnet is a named section of a network, like a room on a floor plan.', 'The declared subnet ID tells the diagram which room contains the AKS nodes.', 'Rule 2: Explicit IDs associate nodes and endpoints with subnets. A private endpoint, not its target managed service, occupies the subnet.'],
+      edges: ['Arrows show declared connections or responsibilities, not measured traffic.', 'A private endpoint points to its database; an identity’s permission link is a different kind of arrow.', 'Rule 3: Private Link can appear as a solid arrow, and role-based access control (RBAC) as a dotted association. Neither establishes live reachability.'],
+      model: ['The Architecture Intermediate Representation (IR) is one shared inventory of the design.', 'The AKS cluster from Terraform and the pod limit from Kubernetes sit in the same record.', 'Resources, subnets, connections, workloads, and endpoints are represented in JSON. The model is the common input to comparison and rendering.'],
+      hash: ['A semantic hash is a fingerprint of the architecture facts.', 'A Terraform comment can change the Git commit ID while leaving the model fingerprint the same.', 'SHA-256 hashes the normalized JSON. The result flags a model change; it does not identify changed fields or replace the Git commit ID.'],
+      delta: ['A delta is the list of changes between two inventories.', 'The VM-to-AKS comparison can say “VM removed, AKS cluster added” rather than showing only changed lines.', 'The engine reports added, removed, or modified facts. Central synchronization can be skipped when the compared models match.'],
+      mermaid: ['Mermaid is a set of drawing instructions written as text.', 'A line of Mermaid can say to draw a box for the AKS cluster and connect it to its subnet.', 'The renderer turns resources into shapes, subnet groupings into subgraphs, and relationships into edges. The translator emits text rather than a fixed image.'],
+      markers: ['Managed blocks are the replaceable pages in a bookmarked guide.', 'The translator replaces the diagram between two markers, not the team’s notes below it.', 'Rule 5: BEGIN DAC and END DAC comments delimit each generated block. The replacement can record the source commit and short model hash.'],
+      validator: ['A quality check catches broken diagrams and edits to the wrong text.', 'It can flag a malformed Mermaid line or a hand-written note changed outside a marker.', 'The checks cover Mermaid structure and preservation of prose outside managed blocks. They do not test runtime behavior.'],
+      local: ['The workload docs are the handbook next to the code.', 'README.md and docs/architecture.md show the revised diagram at the same links the team already uses.', 'dac:render updates the marked sections in an offline checkout. The changes can be reviewed in the same pull request as the code.'],
+      publisher: ['A rolling pull request (PR) sends revisions to the same review inbox.', 'A later source change can update central PR #1 instead of opening a duplicate.', 'Authorized opt-in publication uses Git and the GitHub API to update a dedicated branch and reuse its open PR. It does not merge or deploy.'],
+      catalog: ['The central service index is the directory for shared guides.', 'Grid Telemetry’s row can change from “VM” to “AKS” without changing its guide links.', 'The generated row records the declared host, region, owner, source revision, and guide links. It is not a live inventory.'],
+      central: ['Central docs are the shared handbook for other teams.', 'The operator’s check switches from systemctl to kubectl in the proposed central guide.', 'The architecture, operator, user, and contributor guides share provenance: the source commit and a model fingerprint.'],
+      layout: ['The layout step arranges boxes and arrows so the drawing can be read.', 'DaC says which resources belong in a subnet group; Mermaid decides where to place their boxes.', 'Rule 4: The Mermaid layout engine positions nodes and routes edges when the Markdown page renders.']
     };
 
     const repositories = {
@@ -9114,9 +9259,10 @@ File Added:       products/grid-telemetry-service/decisions/adr-003-vm-to-aks.md
       }
       const leaf = excerpt === undefined ? null : components[component][1][Number(excerpt)];
       const [title, files] = components[component];
-      const [caption, note] = componentCopy[component];
+      const [caption, example, note] = componentCopy[component];
       detailTitle.textContent = title;
       document.querySelector('#map-caption').textContent = caption;
+      document.querySelector('#map-analogy').textContent = example;
       document.querySelector('#map-note').textContent = note;
       const labels = ['Pipeline map', layers[layer][0].join(' '), title, leaf?.title];
       trail.replaceChildren(...labels.slice(0, path.length + 1).map((label, i) => {
@@ -9217,9 +9363,9 @@ File Added:       products/grid-telemetry-service/decisions/adr-003-vm-to-aks.md
       flowComponent = anchor.dataset.flowPath.split('.')[1];
       const [title, examples] = components[flowComponent];
       flowTitle.textContent = flowComponent === 'model' ? 'Architecture IR and semantic hash' : title;
-      document.querySelector('#pipeline-definition').textContent = flowComponent === 'model'
-        ? 'A shared JSON record of the architecture. A semantic hash is the fingerprint of its modeled facts, not the commit ID.'
-        : componentCopy[flowComponent][0];
+      const [definition, analogy] = componentCopy[flowComponent];
+      document.querySelector('#pipeline-definition').textContent = flowComponent === 'model' ? `${definition} The semantic hash is its fingerprint.` : definition;
+      document.querySelector('#pipeline-analogy').textContent = flowComponent === 'model' ? componentCopy.hash[1] : analogy;
       flowExamples.replaceChildren(...examples.map((file, i) => new Option(file.title, String(i))));
       flowExamples.value = flowComponent === 'model' ? '1' : '0';
       updateFlowExample();
@@ -9295,14 +9441,15 @@ File Added:       products/grid-telemetry-service/decisions/adr-003-vm-to-aks.md
     if (location.hash.startsWith('#diagram?')) figure.scrollIntoView({ block: 'start' });
 
     const glossary = document.querySelector('#glossary-disclosure');
-    function openLinkedGlossary() {
+    function openLinkedDisclosure() {
       if (location.hash === '#glossary') glossary.open = true;
+      if (location.hash === '#workflow-terms') document.getElementById('workflow-terms').open = true;
     }
     document.querySelector('.chapters a[href="#glossary"]').addEventListener('click', event => {
       if (event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) glossary.open = true;
     });
-    window.addEventListener('hashchange', openLinkedGlossary);
-    openLinkedGlossary();
+    window.addEventListener('hashchange', openLinkedDisclosure);
+    openLinkedDisclosure();
 
     const snapshotControls = document.querySelector('#snapshot-switch');
     const snapshotState = document.querySelector('#snapshot-state');

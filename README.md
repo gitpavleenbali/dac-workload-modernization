@@ -2,7 +2,7 @@
 
 Ingests high-frequency substation voltage, frequency, and thermal telemetry and exposes real-time grid dispatch health APIs.
 
-**[Open the interactive Doc as Code workshop](https://gitpavleenbali.github.io/dac-workload-modernization/#why).** Follow both comics, use **Present** for the slide decks, and open the diagrams and before/after files in the page. The [Evidence & Links tour](https://gitpavleenbali.github.io/dac-workload-modernization/#evidence-tour) connects each example to the corresponding GitHub record.
+**[Open the interactive Doc as Code workshop](https://gitpavleenbali.github.io/dac-workload-modernization/).** Start with the [workload-to-platform overview](https://gitpavleenbali.github.io/dac-workload-modernization/#cross-team-flow), then follow the Why, What, and [How](https://gitpavleenbali.github.io/dac-workload-modernization/#how-story) comics. Use **Present** for the slide decks, including [commit IDs and architecture hashes](https://gitpavleenbali.github.io/dac-workload-modernization/#fingerprints). The [Evidence & Links tour](https://gitpavleenbali.github.io/dac-workload-modernization/#evidence-tour) connects the in-page diagrams and comparisons to the GitHub records.
 
 This repository is the workload source. `main` holds the virtual machine (VM) baseline; [workload PR #1](https://github.com/gitpavleenbali/dac-workload-modernization/pull/1/files) proposes that the same app run on Azure Kubernetes Service (AKS). The declarations and diagrams describe a scenario in Git, not a deployed service.
 
