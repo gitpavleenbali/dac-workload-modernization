@@ -9,4 +9,4 @@
 | Human-authored content is unchanged. | Review of the diff outside the managed blocks. Existing rationale, notes and policies remain in place. |
 | The result can be reviewed before it is published. | `npm run dac:verify` and `npm test` results accompany the local diff. No deployment, push, or central-repository write is part of the local task. |
 
-Source commits describe intended configuration, not live Azure state. If an application change is not represented in a supported contract, it needs a separate documentation decision. The central pull request is handled by the repository workflow.
+Source commits describe intended configuration, not live Azure state. If an application change is not represented in a supported contract, it needs a separate documentation decision. Option 2A runs the same portable Node.js translator as Option 1. The central pull request and the optional Option 2B review patches are handled by separate GitHub Actions jobs. The [workshop's Option 2A example](https://gitpavleenbali.github.io/dac-workload-modernization/#option-two-local) records a local Copilot CLI run.

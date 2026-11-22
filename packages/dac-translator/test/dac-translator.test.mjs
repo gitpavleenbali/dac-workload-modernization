@@ -457,12 +457,19 @@ test('Non-destructive Markdown renderer updates VM -> AKS across all local & cen
 
     const archPath = path.join(central, 'products', 'grid-telemetry-service', 'architecture.md');
     const adminPath = path.join(central, 'products', 'grid-telemetry-service', 'admin-guide.md');
+    const contributorPath = path.join(central, 'products', 'grid-telemetry-service', 'contributor-guide.md');
 
     // Inject custom human ADR note outside managed blocks
     const customHumanAdr = `\n### ADR-003: Custom Human Security Sign-Off\nApproved by Chief Security Architect on 2026-11-15 — DO NOT OVERWRITE.\n`;
     fs.appendFileSync(archPath, customHumanAdr, 'utf8');
     const vmArchSnapshot = fs.readFileSync(archPath, 'utf8');
     assert.match(fs.readFileSync(adminPath, 'utf8'), /az network bastion ssh/);
+    const checkContributorGuidance = (markdown) => {
+      assert.match(markdown, /`npm run dac:render`.*`npm run dac:verify`/);
+      assert.match(markdown, /separate, opt-in GitHub workflow/);
+      assert.doesNotMatch(markdown, /npx dac-translator|Copilot Cloud Agent open|CI pushes/);
+    };
+    checkContributorGuidance(fs.readFileSync(contributorPath, 'utf8'));
 
     // Now modernize to AKS and re-render!
     upgradeFixtureToAks(repo);
@@ -482,6 +489,9 @@ test('Non-destructive Markdown renderer updates VM -> AKS across all local & cen
     assert.match(aksArchSnapshot, /acrgridtelemetryprod/);
     assert.match(aksAdminSnapshot, /az aks get-credentials/);
     assert.doesNotMatch(aksAdminSnapshot, /az network bastion ssh/);
+    const aksContributor = fs.readFileSync(contributorPath, 'utf8');
+    checkContributorGuidance(aksContributor);
+    assert.match(aksContributor, /builds without pushing an image or deploying/);
 
     // Verify every generated Markdown file has 100% valid Mermaid blocks
     for (const f of ['architecture.md', 'admin-guide.md', 'user-guide.md', 'contributor-guide.md']) {
