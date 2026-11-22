@@ -2,6 +2,8 @@
 
 This repository participates in an enterprise Docs-as-Code (DaC) architecture synchronization pipeline.
 
+For a local documentation refresh, use the [workload documentation spec](../specs/doc-as-code/refresh-workload-docs.md) and the `refresh-workload-docs` skill or `dac-architecture-guardian` agent. The local task stops at a verified diff; central publication is a separate workflow.
+
 ## Mandatory Guardrails for Agents & Contributors
 
 1. **Dual Documentation Responsibility:**
