@@ -271,7 +271,7 @@ export function buildCentralRepoBlocks(ir) {
 
   const userGuideBlocks = {
     'user-service-overview': [
-      '| Consumer Property | Active Production Configuration |',
+      '| Consumer Property | Declared Configuration |',
       '| :--- | :--- |',
       `| **Service Name** | **${ir.service.name}** |`,
       `| **Gateway / Entrypoint** | \`${ingNode?.name || 'Internal'}\` (${ingNode?.displayType || 'Gateway'}) |`,
@@ -290,16 +290,16 @@ export function buildCentralRepoBlocks(ir) {
         ? [
             '### Container & AKS Contribution Workflow',
             `1. **Application & OpenAPI Changes:** Update \`src/\` and \`openapi/openapi.yaml\`; run \`npm test\`.`,
-            `2. **Container Packaging:** Validate \`Dockerfile\` builds cleanly; CI pushes immutable SHA-tagged images to \`${acrNode?.name || 'acrgridtelemetryprod'}.azurecr.io\`.`,
+            `2. **Container Packaging:** CI checks that the Dockerfile builds without pushing an image or deploying the workload. The intended registry is \`${acrNode?.name || 'acrgridtelemetryprod'}.azurecr.io\`.`,
             `3. **Kubernetes & IaC Changes:** Update \`deploy/k8s/\` manifests and \`infra/terraform/\` (plus \`infra/bicep/\` mirror). Run \`terraform validate\`.`,
-            `4. **Automated Docs-as-Code Sync:** Run \`npx dac-translator verify\` locally or let GitHub Actions / Azure Pipelines / Copilot Cloud Agent open the synchronized PR against \`${ir.service.centralDocsProductPath}\`.`
+            '4. **Doc as Code Refresh:** In the workload checkout, `npm run dac:render` updates the marked sections and `npm run dac:verify` checks freshness. Central publication is a separate, opt-in GitHub workflow.'
           ].join('\n')
         : [
             '### Virtual Machine & systemd Contribution Workflow',
             `1. **Application & OpenAPI Changes:** Update \`src/\` and \`openapi/openapi.yaml\`; run \`npm test\`.`,
             `2. **VM Packaging:** Update \`deploy/systemd/grid-telemetry.service\` or \`deploy/cloud-init/cloud-init.yaml\` when runtime flags change.`,
             `3. **IaC Changes:** Update \`infra/terraform/\` (and \`infra/bicep/\`); validate with \`terraform validate\`.`,
-            `4. **Automated Docs-as-Code Sync:** Run \`npx dac-translator verify\` locally or allow CI/CD to propose synchronized documentation updates.`
+            '4. **Doc as Code Refresh:** In the workload checkout, `npm run dac:render` updates the marked sections and `npm run dac:verify` checks freshness. Central publication is a separate, opt-in GitHub workflow.'
           ].join('\n')
     ].join('\n'),
     'contrib-repo-contracts': [
@@ -309,7 +309,7 @@ export function buildCentralRepoBlocks(ir) {
       '| `infra/bicep/main.bicep` | Multi-team Bicep reference template | Bicep Validator + `dac-translator` Bicep Extractor |',
       `| \`${isAks ? 'Dockerfile + deploy/k8s/*.yaml' : 'deploy/systemd/*.service'}\` | Workload runtime & scaling specification | Release Pipeline + \`dac-translator\` Workload Extractor |`,
       '| `openapi/openapi.yaml` | REST API contract & health probe endpoints | API Consumers + `user-guide.md` Renderer |',
-      '| `dac-manifest.json` | Product ownership & Central Docs path mapping | `dac-translator` & GitHub Cloud Agent |'
+      '| `dac-manifest.json` | Product ownership & central docs path mapping | `dac-translator` |'
     ].join('\n')
   };
 
@@ -355,7 +355,7 @@ ${wrapBlock('local-api-endpoints', readmeBlocks['local-api-endpoints'], prov)}
 ## Developer Notes & Local Environment (Human-Maintained)
 
 - **Local Port:** \`PORT=8080 npm start\` launches the HTTP telemetry server locally with an in-memory ring buffer when PostgreSQL is unreachable.
-- **Docs-as-Code Contract:** Infrastructure or manifest edits automatically update the managed blocks above and open a synchronized Pull Request in the Centralized Platform Documentation repository.
+- **Doc as Code:** After a supported source change, \`npm run dac:render\` refreshes the marked sections and \`npm run dac:verify\` checks freshness. Central publication is a separate, opt-in workflow.
 `;
 
   writeOrUpdateDoc(localReadmePath, localReadmeInitial, readmeBlocks, prov, updatedFiles);
@@ -501,7 +501,7 @@ ${wrapBlock('contrib-repo-contracts', central.contributorGuideBlocks['contrib-re
 
 ## Code Review Standards, Branching Policy & Definition of Done
 
-- **Protected \`main\` Branch:** All application and IaC modifications require pull request approval from \`CODEOWNERS\`, green unit tests, and passing \`terraform validate\`.
+- **Review policy:** Route application and IaC changes to the listed \`CODEOWNERS\` reviewers, with passing unit tests and Terraform validation. Enforcement depends on the repository's configured rules.
 - **Zero Static Secrets:** Never commit connection strings, SSH keys, or SAS tokens; bind permissions through Managed Identity RBAC in Terraform/Bicep.
 - **Documentation Accountability:** Review automated Docs-as-Code PRs alongside architectural changes and append human rationale to \`architecture.md\` ADRs whenever hosting or stateful services change.
 `,
@@ -541,7 +541,7 @@ ${wrapBlock('contrib-repo-contracts', central.contributorGuideBlocks['contrib-re
     const centralReadmePath = path.join(centralDocsRoot, 'README.md');
     if (fs.existsSync(centralReadmePath)) {
       const catalogRow = [
-        '| Product / Service | Landing Zone | Active Hosting Model | Region | Owner | Source Provenance | Guides |',
+        '| Product / Service | Landing Zone | Declared Hosting Model | Region | Owner | Source Provenance | Guides |',
         '| :--- | :--- | :--- | :--- | :--- | :--- | :--- |',
         `| **${ir.service.name}** | \`${ir.service.landingZone}\` | **${HOSTING_LABELS[ir.hostingModel]}** | \`${ir.service.region}\` | \`${ir.service.ownerTeam}\` | \`${ir.sourceRepo}@${ir.sourceCommit.slice(0, 7)}\` (\`${ir.semanticHash.slice(0, 8)}\`) | [Architecture](./${ir.service.centralDocsProductPath}/architecture.md) · [Admin](./${ir.service.centralDocsProductPath}/admin-guide.md) · [User](./${ir.service.centralDocsProductPath}/user-guide.md) · [Contributor](./${ir.service.centralDocsProductPath}/contributor-guide.md) |`
       ].join('\n');

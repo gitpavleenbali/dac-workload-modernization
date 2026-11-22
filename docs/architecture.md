@@ -1,5 +1,7 @@
 # Grid Telemetry & Dispatch Service — Repository Architecture & Delivery View
 
+This page documents the declarations in the checked-out revision, not verified Azure deployment or connectivity. The diagram includes intended delivery and runtime paths. This repository's Doc as Code workflow tests and validates those changes; it does not push images or deploy them. See the [workshop's before/after comparison](https://gitpavleenbali.github.io/dac-workload-modernization/#file-comparison) for the VM baseline, the AKS proposal, and the central review.
+
 ## Runtime & CI/CD Delivery Flow
 
 <!-- BEGIN DAC:local-runtime-diagram source="gitpavleenbali/dac-workload-modernization@v1.0.0-vm-baseline" irHash="e8147f08f46c" -->
