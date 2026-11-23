@@ -7862,6 +7862,13 @@ File Added:       products/grid-telemetry-service/decisions/adr-003-vm-to-aks.md
       <h2 id="azure-devops-path-title">Azure DevOps challenge and remediation</h2>
       <p class="section-intro"><strong>Audience question:</strong> “What if our source repositories are in Azure Repos and we do not use GitHub?” The deterministic DAC core is portable, but GitHub Agentic Workflows and GitHub Copilot cloud-agent sessions are GitHub-hosted capabilities. Azure DevOps needs either its native review/local-assistance features or a custom Azure Pipelines integration.</p>
 
+      <figure class="artifact-diagram">
+        <figcaption>Recommended custom architecture · <a href="./assets/azure-devops-agentic-dac.svg" target="_blank" rel="noopener">Open SVG</a> · <a href="./assets/azure-devops-agentic-dac.png" target="_blank" rel="noopener">Open PNG</a> · <a href="./assets/azure-devops-agentic-dac.excalidraw" download>Edit in Excalidraw</a></figcaption>
+        <div tabindex="0" role="region" aria-label="Azure DevOps agentic Doc as Code reference architecture">
+          <img src="./assets/azure-devops-agentic-dac.svg" width="1600" height="1120" alt="Azure Repos triggers Azure Pipelines. Deterministic DAC produces architecture evidence. An optional Microsoft Foundry Agent produces bounded structured output. An independent verifier checks the patch. Azure Repos policies govern the draft pull request and controlled merge.">
+        </div>
+      </figure>
+
       <div class="table-scroll" tabindex="0" role="region" aria-label="Azure DevOps agentic capability choices">
         <table class="comparison-table">
           <thead>

@@ -10,6 +10,7 @@ if (process.argv.length !== 3) {
 const output = path.resolve(process.argv[2]);
 const topologyAssets = ['vm-baseline', 'aks-modernization'].flatMap(name =>
   ['svg', 'png', 'excalidraw'].map(ext => `assets/${name}.${ext}`));
+const azureDevOpsAssets = ['svg', 'png', 'excalidraw'].map(ext => `assets/azure-devops-agentic-dac.${ext}`);
 if (!lstatSync(path.join(source, 'assets')).isDirectory()) {
   throw new Error('The site assets directory must not be a symbolic link.');
 }
@@ -19,7 +20,7 @@ if (!lstatSync(path.join(source, 'dac.html')).isFile()) {
 const html = readFileSync(path.join(source, 'dac.html'), 'utf8');
 for (const id of ['workshop-intro', 'workshop-fullscreen', 'cross-team-flow', 'why', 'why-deck', 'opening-story', 'story-detail', 'facilitator-mode', 'what', 'what-deck', 'portable-core-story', 'fingerprints', 'pipeline-flow', 'pipeline-detail', 'map-pipeline',
   'presentation', 'diagram-viewer', 'how', 'how-deck', 'how-story', 'topology-comparison', 'file-comparison', 'compare-code', 'compare-readme', 'workflow-terms',
-  'compare-provenance', 'option-two-local', 'fixture-workload', 'fixture-central', 'evidence-tour', 'evidence-index', 'evidence-deck', 'glossary']) {
+  'compare-provenance', 'option-two-local', 'fixture-workload', 'fixture-central', 'evidence-tour', 'evidence-index', 'evidence-deck', 'azure-devops-path', 'glossary']) {
   if (!html.includes(`id="${id}"`)) throw new Error(`Missing site section: ${id}`);
 }
 const relativeAssets = [...html.matchAll(/(?:src|href)="\.\/(assets\/[^"]+)"/g)].map(match => match[1]);
@@ -28,7 +29,7 @@ if (workshopDiagrams.length < 4) throw new Error('The workshop Mermaid diagrams 
 const storyAssets = ['why', 'what', 'how', 'core', 'local', 'review'].map(chapter => `assets/story-${chapter}.png`);
 const openingAssets = ['assets/doc-as-code-mark.svg', 'assets/cross-team-projection.webp',
   ...['change', 'refresh', 'review'].map(scene => `assets/story-how-${scene}.webp`)];
-const assets = [...topologyAssets, ...workshopDiagrams, ...storyAssets, ...openingAssets];
+const assets = [...topologyAssets, ...azureDevOpsAssets, ...workshopDiagrams, ...storyAssets, ...openingAssets];
 if (assets.some(file => !relativeAssets.includes(file)) || relativeAssets.some(file => !assets.includes(file))) {
   throw new Error('The HTML references do not match the Pages asset allowlist.');
 }
