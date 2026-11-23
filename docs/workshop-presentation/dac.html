@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
+  <link rel="icon" href="data:,">
   <title>Doc as Code | Interactive workshop</title>
   <meta name="description" content="A Doc as Code workshop. Follow how existing diagrams and guides are updated when a team proposes running the same application in containers on Azure Kubernetes Service instead of on virtual machines.">
   <style>
@@ -687,8 +688,8 @@
         <li><b>20–45 min</b><span><a href="#what">What · Portable core and Copilot.</a> Use the comic and the <a href="#fingerprints">commit ID and hash slide</a> before the <a href="#flow">Pipeline overview</a> and <a href="#explore">Architecture map</a>.</span></li>
         <li><b>45–65 min</b><span><a href="#how">How · The same application on VMs and on AKS.</a> Open the three comic scenes, then use Next through the six stages. Compare the Azure diagrams and the eight paired repository files.</span></li>
         <li><b>65–85 min</b><span><a href="#delivery">Option 1 · Local terminal &amp; GitHub Actions.</a> Show stale check failure, local render, and live GitHub sync updating rolling Central Docs PR #1.</span></li>
-        <li><b>85–100 min</b><span><a href="#option-two-local">Option 2A · Spec-driven local Copilot.</a> Run or walk through <code>dac-architecture-guardian</code> updating HPA <code>4–24 → 4–28 pods</code> from <code>.github/</code> specs.</span></li>
-        <li><b>100–115 min</b><span><a href="#agentic-ci">Option 2B &amp; 2C · Keyless CI &amp; Cloud Agent.</a> Show real live OIDC runs <code>#44971666753</code> &amp; <code>#44972101526</code> + Cloud Agent Draft PR #3 (<code>ADR-003</code>).</span></li>
+        <li><b>85–100 min</b><span><a href="#option-two-local">Option 2A · VS Code custom agent.</a> Show the same AKS-code/VM-document drift, then let <code>dac-architecture-guardian</code> coordinate the deterministic refresh in Copilot Chat.</span></li>
+        <li><b>100–115 min</b><span><a href="#agentic-ci">Option 2B · GitHub cloud agentic delivery.</a> Show Agentic Workflow runs <code>#44971666753</code> and <code>#44972101526</code>, then the Copilot Cloud Agent session and Draft PR #3.</span></li>
         <li><b>115–120 min</b><span><a href="#evidence-tour">Evidence &amp; Links Tour + Decision recap.</a> Step Next-by-Next through any live GitHub link the audience asks to inspect, then close at <a href="#review">Review</a>.</span></li>
       </ol>
     </section>
@@ -1090,7 +1091,7 @@
             <text x="422" y="267" fill="#9ce6d8" font-size="13">Attaches a proposed edit without applying it</text>
           </g>
 
-          <g data-story-detail="rules-cloud" data-story-title="Option 2C · On-demand cloud agent">
+          <g data-story-detail="rules-cloud" data-story-title="Option 2B.2 · On-demand cloud agent">
             <rect x="780" y="162" width="352" height="134" rx="8" fill="#173e3c" stroke="#78d6c6" stroke-width="1.8"/>
             <text x="798" y="190" fill="#a8ebe0" font-size="12" font-weight="700">OPTION 2C · ASSIGNED SEPARATELY</text>
             <text x="798" y="216" fill="#ffffff" font-size="15" font-weight="700">On-demand cloud agent</text>
@@ -1433,7 +1434,7 @@
             <tr><th scope="row">4. Renderers and checks<span class="tech-plain">Replace one page in a binder without touching the notes.</span></th><td><code>src/renderers/*.mjs</code>, <code>validators/*.mjs</code></td><td>Mermaid, Markdown markers, and validation</td><td>Rebuild diagrams inside <code>BEGIN/END DAC</code> blocks and check that owner-written text stays intact.</td></tr>
             <tr><th scope="row">5. Pull request publisher<span class="tech-plain">Send the update to the same review inbox.</span></th><td><code>src/publishers/github-pr-publisher.mjs</code></td><td>Git and the GitHub REST API</td><td>With authorization, updates <code>dac-sync/&lt;service&gt;</code> and reuses the open central pull request.</td></tr>
             <tr><th scope="row">6. Spec-driven local Copilot<span class="tech-plain">An assistant working from an agreed checklist.</span></th><td><code>.github/agents/</code>, <code>.github/skills/</code>, <code>specs/</code></td><td>Copilot in VS Code or Copilot CLI</td><td>The recorded CLI run updated the scaling label and passed the local checks. The developer reviews the diff.</td></tr>
-            <tr><th scope="row">7. Hosted review<span class="tech-plain">A draft note for the reviewer, not a decision.</span></th><td><code>dac-agentic-review.md</code> and <code>dac-agentic-review.lock.yml</code></td><td>GitHub Actions and short-lived Azure AI Foundry authentication</td><td>Option 2B attaches a checked patch. Separately, Option 2C drafts a decision record in its own pull request.</td></tr>
+            <tr><th scope="row">7. Hosted review<span class="tech-plain">A draft note or scoped decision record for human review.</span></th><td><code>dac-agentic-review.md</code>, its lock file, and <code>dac-central-curator.agent.md</code></td><td>GitHub Actions Agentic Workflow plus Copilot Cloud Agent sessions</td><td>Option 2B.1 attaches checked patches; Option 2B.2 drafts a decision record in its own pull request.</td></tr>
           </tbody>
         </table>
       </div>
@@ -1748,14 +1749,13 @@
     </section>
 
     <section id="approaches" aria-labelledby="approaches-title">
-      <h2 id="approaches-title">Two paths for documentation updates</h2>
-      <p class="section-intro"><strong>Recommendation:</strong> Use the deterministic translator as the source of generated architecture facts. Add the agentic path when a human reviewer would benefit from a draft explanation, a question about cutover, or an architecture decision record (ADR). The proposed text does not replace the generated facts.</p>
+      <h2 id="approaches-title">Three delivery options for the same documentation drift</h2>
+      <p class="section-intro"><strong>Recommendation:</strong> Option 1 is the deterministic engine. Option 2A lets a developer use a local VS Code custom agent to coordinate that engine. Option 2B moves agent execution into GitHub through Agentic Workflows and Copilot Cloud Agent sessions. Generated facts remain deterministic.</p>
       <div data-evidence-tabs="Documentation approaches" data-screen-only>
         <div class="evidence-tabs" data-tab-buttons hidden>
           <button class="control" type="button" id="path-translator-tab" data-tab="path-translator">1 · Translator</button>
           <button class="control" type="button" id="path-local-tab" data-tab="path-local">2A · Local Copilot</button>
-          <button class="control" type="button" id="path-ci-tab" data-tab="path-ci">2B · Copilot in Actions</button>
-          <button class="control" type="button" id="path-cloud-tab" data-tab="path-cloud">2C · Cloud agent</button>
+          <button class="control" type="button" id="path-ci-tab" data-tab="path-ci">2B · GitHub cloud agents</button>
         </div>
         <section class="path-panel" id="path-translator" data-evidence-panel>
           <h3>Option 1 · Generate facts from code</h3>
@@ -1771,27 +1771,18 @@
           <ol class="ci-jobs" aria-label="Local Copilot flow">
             <li><strong>Give it the specification</strong>The team defines the two files, allowed edits, and checks.</li>
             <li><strong>Run the same translator</strong>The agent refreshes both files and verifies the result; it does not draw from memory.</li>
-            <li><strong>Inspect the local diff</strong>The HPA example updates the diagram label and README fingerprint; nothing is pushed.</li>
+            <li><strong>Inspect the local diff</strong>The same VM-to-AKS README and architecture changes appear locally; nothing is pushed.</li>
           </ol>
           <p><strong>Use it for:</strong> A repeatable developer task with an explicit definition of done.</p>
         </section>
         <section class="path-panel" id="path-ci" data-evidence-panel>
-          <h3>Option 2B · Add a review proposal to GitHub Actions</h3>
+          <h3>Option 2B · Use GitHub cloud agentic delivery</h3>
           <ol class="ci-jobs" aria-label="GitHub Agentic Workflows flow">
-            <li><strong>Check the architecture first</strong>The existing CI jobs validate the declared change and prepare a short evidence file.</li>
-            <li><strong>Ask a focused question</strong>Copilot proposes a migration summary and a cutover or rollback question.</li>
-            <li><strong>Attach a checked patch</strong>The workload and central runs each attach a patch. Neither agent applies it.</li>
+            <li><strong>2B.1 · Agentic Workflow</strong>Actions validates the change, then Copilot proposes bounded review text from checked evidence.</li>
+            <li><strong>Verify the proposal</strong>The workload and central runs attach separate checked patches; neither patch is applied.</li>
+            <li><strong>2B.2 · Cloud Agent</strong>A scoped GitHub issue launches a background agent that creates ADR-003 in a separate draft PR.</li>
           </ol>
-          <p><strong>Use it for:</strong> A small, traceable reviewer prompt as part of a repeatable CI workflow.</p>
-        </section>
-        <section class="path-panel" id="path-cloud" data-evidence-panel>
-          <h3>Option 2C · Request a decision draft on demand</h3>
-          <ol class="ci-jobs" aria-label="On-demand cloud agent flow">
-            <li><strong>Assign a scoped issue</strong>A maintainer asks for a proposed migration decision record.</li>
-            <li><strong>Draft it separately</strong>The cloud agent opens a draft pull request for the ADR, not the generated architecture.</li>
-            <li><strong>Decide as owners</strong>Service and platform owners weigh trade-offs and agree cutover and rollback criteria.</li>
-          </ol>
-          <p><strong>Use it for:</strong> A stand-alone decision that needs accountable human approval.</p>
+          <p><strong>Use it for:</strong> Hosted automated review plus scoped background repository work, while humans retain approval and merge authority.</p>
         </section>
       </div>
       <figure class="ci-figure">
@@ -1843,7 +1834,7 @@
         <a href="#file-comparison">Compare the repository files</a>
         <a href="#delivery">Option 1 · Terminal and Actions</a>
         <a href="#option-two-local">Option 2A · Local Copilot</a>
-        <a href="#agentic-ci">Option 2B &amp; 2C · Live CI &amp; Cloud Agent</a>
+        <a href="#agentic-ci">Option 2B · GitHub cloud agentic delivery</a>
         <a href="#evidence-tour">Guided Evidence &amp; Links Tour</a>
       </nav>
       <!-- BEGIN WORKSHOP:how-deck -->
@@ -1861,8 +1852,8 @@
           <button type="button" role="tab" id="how-deck-tab-1" data-slide="1" aria-selected="false" aria-controls="how-deck-panel-1" tabindex="-1"><b aria-hidden="true">2</b><span>Code changes</span></button>
           <button type="button" role="tab" id="how-deck-tab-2" data-slide="2" aria-selected="false" aria-controls="how-deck-panel-2" tabindex="-1"><b aria-hidden="true">3</b><span>Option 1 · Sync</span></button>
           <button type="button" role="tab" id="how-deck-tab-3" data-slide="3" aria-selected="false" aria-controls="how-deck-panel-3" tabindex="-1"><b aria-hidden="true">4</b><span>Option 2A · Local</span></button>
-          <button type="button" role="tab" id="how-deck-tab-4" data-slide="4" aria-selected="false" aria-controls="how-deck-panel-4" tabindex="-1"><b aria-hidden="true">5</b><span>Option 2B · Actions</span></button>
-          <button type="button" role="tab" id="how-deck-tab-5" data-slide="5" aria-selected="false" aria-controls="how-deck-panel-5" tabindex="-1"><b aria-hidden="true">6</b><span>Option 2C · Cloud ADR</span></button>
+          <button type="button" role="tab" id="how-deck-tab-4" data-slide="4" aria-selected="false" aria-controls="how-deck-panel-4" tabindex="-1"><b aria-hidden="true">5</b><span>Option 2B.1 · Workflow</span></button>
+          <button type="button" role="tab" id="how-deck-tab-5" data-slide="5" aria-selected="false" aria-controls="how-deck-panel-5" tabindex="-1"><b aria-hidden="true">6</b><span>Option 2B.2 · Cloud Agent</span></button>
       </div>
       <div class="deck-stage">
         
@@ -2057,10 +2048,10 @@
 
         <article class="deck-slide" id="how-deck-panel-3" role="tabpanel" aria-labelledby="how-deck-tab-3" hidden>
           <header class="deck-slide-head">
-            <h3>Stage 4: Option 2A — Spec-driven local Copilot updates diagrams & docs from a single prompt</h3>
+            <h3>Stage 4: Option 2A — VS Code custom agent resolves the same VM-to-AKS drift</h3>
             
           </header>
-          <p class="deck-lead">Using .github/ instructions, specs/doc-as-code/refresh-workload-docs.md, a workspace skill, prompt file, and custom agent, one command refreshes and verifies local docs.</p>
+          <p class="deck-lead">The separate rehearsal checkout contains AKS code paired with old VM docs. In VS Code Copilot Chat, <code>dac-architecture-guardian</code> uses the repository skill and deterministic DAC commands to refresh and verify the same files locally.</p>
           <div class="evidence-pair"><article class="file-snapshot"><h4>HPA · 4–24 pods</h4><figure class="artifact-diagram">
     <figcaption>Generated Mermaid · <button class="control" type="button" data-enlarge-diagram aria-pressed="false" hidden>Actual size</button> <a href="./assets/workshop-diagram-30b3202588df.svg">Open SVG</a></figcaption>
     <div tabindex="0" role="region" aria-label="Workload runtime, HPA 4 to 24 pods diagram">
@@ -2075,16 +2066,16 @@
   </figure></article></div>
           <div class="deck-columns">
             <div class="deck-col">
-              <h4>How to run Option 2A live in VS Code or CLI</h4>
+              <h4>How to run Option 2A live in VS Code Copilot Chat</h4>
               <ol class="compact-steps">
-        <li><strong>Edit any supported fact:</strong> e.g. in <code>deploy/k8s/workloads.yaml</code>, change <code>maxReplicas: 24</code> → <code>28</code>.</li>
-        <li><strong>In VS Code Copilot Chat:</strong> choose agent <code>dac-architecture-guardian</code> (or type <code>/refresh-workload-docs</code>) and submit the refresh prompt.</li>
-        <li><strong>Or in Terminal (Copilot CLI):</strong> run <code>copilot --agent dac-architecture-guardian -p "Refresh the existing workload docs..."</code></li>
-        <li><strong>Review the local result:</strong> inspect <code>git diff -- README.md docs/architecture.md</code>. A separate rehearsal worktree keeps these sample edits out of the demo branch.</li>
+        <li><strong>Prepare:</strong> create the isolated <code>dac-option2a-agent-demo</code> checkout with AKS code and old VM documents.</li>
+        <li><strong>Select the custom agent:</strong> in the separate VS Code window choose <code>dac-architecture-guardian</code>.</li>
+        <li><strong>Invoke the skill:</strong> ask it to use <code>refresh-workload-docs</code>, run the DAC renderer, verifier and tests, and leave the changes local.</li>
+        <li><strong>Review the result:</strong> compare the same README and architecture page before and after; then inspect the local Git diff.</li>
       </ol>
             </div>
             <div class="deck-col">
-              <h4>Verified live Option 2A execution (HPA 24 → 28)</h4>
+              <h4>Recorded historical Option 2A proof</h4>
               <pre class="evidence-code" tabindex="0" aria-label="Unified diff"><code>diff --git a/deploy/k8s/workloads.yaml b/deploy/k8s/workloads.yaml
 index a011b68..3b0bb1d 100644
 --- a/deploy/k8s/workloads.yaml
@@ -2099,12 +2090,12 @@ index a011b68..3b0bb1d 100644
             </div>
           </div>
           <div class="deck-qa"><strong>Audience check:</strong> Ask: <em>“What if a developer changes internal JavaScript retry logic that has no Terraform or OpenAPI change?”</em> The spec instructs the agent to report the unmapped change rather than hallucinating diagram edits!</div>
-          <aside class="facilitator deck-facilitator" aria-label="4 · Option 2A local spec facilitator cue" hidden><p><strong>56–60 min · Preview the local demo:</strong> Show the recorded <code>24 → 28</code> example here. Run the change later from the separate rehearsal worktree. The rendered before-and-after diagrams are available without a network connection.</p></aside>
+          <aside class="facilitator deck-facilitator" aria-label="4 · Option 2A local spec facilitator cue" hidden><p><strong>56–60 min · Preview the local demo:</strong> Run the current VM-to-AKS drift example from <code>dac-option2a-agent-demo</code>. The HPA change shown here is retained only as historical proof that the same agent handles smaller supported changes.</p></aside>
         </article>
 
         <article class="deck-slide" id="how-deck-panel-4" role="tabpanel" aria-labelledby="how-deck-tab-4" hidden>
           <header class="deck-slide-head">
-            <h3>Option 2B · Copilot writes a draft for reviewers in GitHub Actions</h3>
+            <h3>Option 2B.1 · Agentic Workflow writes a bounded draft for reviewers</h3>
             
           </header>
           <p class="deck-lead">Think of this as a reviewer’s note, not an edit to the guide. The two recorded runs attached checked <code>architecture.patch</code> files. Neither patch was applied.</p>
@@ -2176,7 +2167,7 @@ index 546b719..72e449f 100644
 
         <article class="deck-slide" id="how-deck-panel-5" role="tabpanel" aria-labelledby="how-deck-tab-5" hidden>
           <header class="deck-slide-head">
-            <h3>Stage 6: Option 2C — On-demand GitHub Copilot Cloud Agent authors standalone ADR-003</h3>
+            <h3>Stage 6: Option 2B.2 — On-demand GitHub Copilot Cloud Agent authors standalone ADR-003</h3>
             
           </header>
           <p class="deck-lead">When architects need a structured Architecture Decision Record explaining hypotheses, cutover gates, and rollback plans, they assign an issue to dac-central-curator.</p>
@@ -2230,7 +2221,7 @@ index 546b719..72e449f 100644
           </div>
           <div class="deck-qa"><strong>Audience check:</strong> Scroll down to <strong>Agentic CI and the cloud agent are separate</strong> to read the full rendered <code>ADR-003</code> text inline.</div>
           <p><a href="#topology-comparison">Compare the VM and AKS topologies →</a></p>
-          <aside class="facilitator deck-facilitator" aria-label="6 · Option 2C Cloud ADR facilitator cue" hidden><p><strong>63–65 min · Wrap the 6-stage arc:</strong> Note that Draft PR #3’s quality gate (<code>#44890039831</code>) is approved and green, and PR #3 remains unmerged so you can show it live.</p></aside>
+          <aside class="facilitator deck-facilitator" aria-label="6 · Option 2B.2 Cloud ADR facilitator cue" hidden><p><strong>63–65 min · Wrap the 6-stage arc:</strong> Note that Draft PR #3’s quality gate (<code>#44890039831</code>) is approved and green, and PR #3 remains unmerged so you can show it live.</p></aside>
         </article>
       </div>
       <div class="deck-footer" data-deck-footer hidden>
@@ -6889,7 +6880,7 @@ jobs:
             <div><dt>Local agent</dt><dd><code>.github/agents/dac-architecture-guardian.agent.md</code></dd></div>
             <div><dt>Reusable entry points</dt><dd><code>.github/skills/refresh-workload-docs/SKILL.md</code> and <code>.github/prompts/refresh-workload-docs.prompt.md</code></dd></div>
           </dl>
-          <p>In VS Code Local, select the <code>/refresh-workload-docs</code> prompt where supported; the matching workspace skill provides the reusable procedure. The custom agent can also take one instruction directly.</p>
+          <p>In VS Code Copilot Chat, select <code>dac-architecture-guardian</code> in the separate <code>dac-option2a-agent-demo</code> window. Ask it to use the <code>refresh-workload-docs</code> skill; the repository specification provides the reusable procedure and verification boundary.</p>
         </div>
         <div>
           <h3>Run and review locally</h3>
@@ -6998,7 +6989,7 @@ description: Refresh the existing workload README and architecture diagram after
 
 Do not edit generated Mermaid by hand, replace whole documents, change text outside the managed sections, deploy or query Azure, publish a branch or pull request, or write to the central docs repository.
 </code></pre></details>
-<details><summary>VS Code Local prompt · refresh-workload-docs.prompt.md</summary><pre class="evidence-code" tabindex="0" aria-label="VS Code Local prompt"><code>---
+<details><summary>VS Code Copilot Chat prompt · refresh-workload-docs.prompt.md</summary><pre class="evidence-code" tabindex="0" aria-label="VS Code Copilot Chat prompt"><code>---
 name: refresh-workload-docs
 description: Update the existing workload diagrams and documentation from the reviewed code change.
 agent: agent
@@ -7130,7 +7121,7 @@ index 65fd49d..8914f30 100644
 </div>
         <!-- END WORKSHOP:local-agent -->
       </div>
-      <p class="scope">Verified live with <code>copilot --agent dac-architecture-guardian</code> against <code>specs/doc-as-code/refresh-workload-docs.md</code> (<code>HPA 4–24 → 4–28 pods</code>, 8/8 tests passing). Use VS Code Copilot Chat (<code>@dac-architecture-guardian</code> or <code>/refresh-workload-docs</code>) or the Copilot CLI locally; central publication stays governed by the repository workflow.</p>
+      <p class="scope"><strong>Current live rehearsal:</strong> the separate <code>dac-option2a-agent-demo</code> checkout uses the same AKS-code/VM-document drift as Option 1 and runs <code>dac-architecture-guardian</code> through VS Code Copilot Chat. The HPA <code>24 → 28</code> material retained below is historical proof that the same agent also handles smaller supported changes. Central publication remains governed by the repository workflow.</p>
       <aside class="facilitator" aria-label="Local Copilot facilitation notes" hidden>
         <h3>85–100 min · Live demo steps for Option 2A</h3>
         <p><strong>Live demo:</strong> In a rehearsal worktree from the migration branch, open <code>deploy/k8s/workloads.yaml</code>, change <code>maxReplicas: 24</code> to <code>28</code>, and invoke <code>dac-architecture-guardian</code>. Show the new <code>HPA 4-28 pods</code> label and the README’s updated architecture fingerprint. Leave the sample edits local.</p>
@@ -7153,7 +7144,7 @@ index 65fd49d..8914f30 100644
           </div>
         </div>
         <div>
-          <h3>Option 2C on demand · GitHub Copilot cloud agent</h3>
+          <h3>Option 2B.2 on demand · GitHub Copilot Cloud Agent</h3>
           <p>A separately assigned issue invokes the <code>dac-central-curator</code> custom agent in the central repository. It authors a standalone Architecture Decision Record (<code>ADR-003</code>) in its own draft pull request rather than editing the rolling sync PR or regenerating deterministic diagrams.</p>
           <p class="scope"><strong>Live verified evidence:</strong> <a href="https://github.com/gitpavleenbali/dac-central-platform-docs/actions/runs/44889944409">Cloud Agent run #44889944409</a> opened <a href="https://github.com/gitpavleenbali/dac-central-platform-docs/pull/3/files">Draft PR #3</a>, and its <a href="https://github.com/gitpavleenbali/dac-central-platform-docs/actions/runs/44890039831">central quality gate #44890039831</a> passed green. The PR stays unmerged until accountable owners answer its cutover and rollback questions.</p>
           <div class="evidence-links">
@@ -7184,7 +7175,7 @@ index 65fd49d..8914f30 100644
       <li><strong>Attach verified patch</strong>Pass threat detection &amp; <code>git apply --check</code> without modifying branches.</li>
     </ol>
   </div>
-  <div class="ci-lane"><h3>Option 2C · GitHub Copilot cloud agent</h3>
+  <div class="ci-lane"><h3>Option 2B.2 · GitHub Copilot Cloud Agent</h3>
     <ol class="ci-jobs" role="list">
       <li><strong>Assign Issue #2</strong><code>dac-central-curator</code> receives the decision brief.</li>
       <li><strong>Open Draft PR #3</strong>Authors standalone <code>ADR-003</code>; passes central quality gate.</li>
@@ -7530,7 +7521,7 @@ Keep this change **Proposed** until the owner answers the questions above and re
       <aside class="facilitator" aria-label="Hosted proposals facilitation notes" hidden>
         <h3>100–115 min · Compare live CI patch artifacts with the Cloud Agent ADR</h3>
         <p><strong>Show:</strong> Toggle between the live workload patch (<code>#44971666753</code>) and live central patch (<code>#44972101526</code>). Point out that both came from keyless Azure OIDC runs and passed <code>git apply --check</code>. Then expand <code>ADR-003</code> below to read the Cloud Agent’s cutover and rollback questions.</p>
-        <p><strong>Say:</strong> Option 2B attaches a bounded review patch to each pipeline check; Option 2C opens a dedicated Draft PR for long-form architectural rationale. Humans review and approve both.</p>
+        <p><strong>Say:</strong> Option 2B.1 attaches a bounded review patch to each pipeline check; Option 2B.2 opens a dedicated Draft PR for long-form architectural rationale. Humans review and approve both.</p>
       </aside>
     </section>
 
@@ -7544,7 +7535,7 @@ Keep this change **Proposed** until the owner answers the questions above and re
         <a href="https://github.com/gitpavleenbali/dac-central-platform-docs/pull/1/files">Central docs PR #1</a>
         <a href="https://github.com/gitpavleenbali/dac-workload-modernization/actions/runs/44971666753">Option 2B · Workload run</a>
         <a href="https://github.com/gitpavleenbali/dac-central-platform-docs/actions/runs/44972101526">Option 2B · Central run</a>
-        <a href="https://github.com/gitpavleenbali/dac-central-platform-docs/pull/3/files">Option 2C · Draft PR #3</a>
+        <a href="https://github.com/gitpavleenbali/dac-central-platform-docs/pull/3/files">Option 2B.2 · Draft PR #3</a>
       </nav>
       <!-- BEGIN WORKSHOP:evidence-deck -->
 <figure class="slide-deck" id="evidence-deck" data-deck="Stop" data-screen-only>
@@ -7826,7 +7817,7 @@ index 546b719..72e449f 100644
 
         <article class="deck-slide" id="evidence-deck-panel-9" role="tabpanel" aria-labelledby="evidence-deck-tab-9" hidden>
           <header class="deck-slide-head">
-            <h3>Stop 10: Option 2C On-Demand Cloud Agent Issue #2 & Draft PR #3 (ADR-003)</h3>
+            <h3>Stop 10: Option 2B.2 On-Demand Cloud Agent Issue #2 & Draft PR #3 (ADR-003)</h3>
             <a class="live-link-btn" href="https://github.com/gitpavleenbali/dac-central-platform-docs/pull/3/files" target="_blank" rel="noopener">Open Draft PR #3 ↗</a>
           </header>
           <p class="deck-lead">Assigned from Issue #2, GitHub Copilot Cloud Agent (dac-central-curator) authored standalone ADR-003 in Draft PR #3—and passed the central quality gate (#44890039831).</p>
@@ -7842,7 +7833,7 @@ File Added:       products/grid-telemetry-service/decisions/adr-003-vm-to-aks.md
             </div>
             <div class="deck-col">
               <h4>What it proves</h4>
-              <p>Completes the enterprise story: deterministic compiler for diagrams/tables (Option 1), spec-driven local refresh (Option 2A), keyless CI review patches (Option 2B), and on-demand Cloud Agent ADRs (Option 2C).</p>
+              <p>Completes the enterprise story: deterministic compiler for diagrams/tables (Option 1), VS Code custom-agent refresh (Option 2A), and GitHub cloud agentic delivery through keyless workflow patches plus an on-demand Cloud Agent ADR (Option 2B).</p>
             </div>
           </div>
           <div class="deck-qa"><strong>Audience check:</strong> <strong>Q:</strong> <em>“Why is ADR-003 still a Draft PR?”</em> <strong>A:</strong> Only accountable human service and platform owners can answer cutover/rollback criteria and approve an architectural decision.</div>
@@ -8405,7 +8396,7 @@ File Added:       products/grid-telemetry-service/decisions/adr-003-vm-to-aks.md
         'Change the declared scaling cap and ask the local agent to refresh and verify the existing README and architecture page. The developer reviews the local diff; the agent does not push.'
       ],
       'portable-review': [
-        'Option 2B is a GitHub Actions workflow that starts with checked evidence and attaches an unapplied Markdown patch. An on-demand cloud agent is separate: Option 2C drafts a decision record in its own pull request.',
+        'Option 2B.1 is a GitHub Actions Agentic Workflow that starts with checked evidence and attaches an unapplied Markdown patch. Option 2B.2 is an on-demand Cloud Agent session that drafts a decision record in its own pull request.',
         'The workflow can ask how to confirm readiness before switching traffic. It does not decide whether to switch or alter the generated diagram.'
       ],
       'how-change': [
@@ -8529,7 +8520,7 @@ File Added:       products/grid-telemetry-service/decisions/adr-003-vm-to-aks.md
         'A patch might ask how the team would confirm readiness before switching traffic to the proposed platform.'
       ],
       'rules-cloud': [
-        'Option 2C starts with a separately assigned GitHub issue. The cloud agent drafts an architecture decision record, not new generated facts or an update to the rolling sync.',
+        'Option 2B.2 starts with a separately assigned GitHub issue. The cloud agent drafts an architecture decision record, not new generated facts or an update to the rolling sync.',
         'The separate draft pull request can document cutover and rollback questions. A person still owns the decision.'
       ]
     };
