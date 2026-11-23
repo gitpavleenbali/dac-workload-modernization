@@ -144,14 +144,26 @@ git diff -- README.md docs/architecture.md
 From this repository root, paste one command at a time:
 
 ```powershell
+npm run demo:option1:baseline
 npm run demo:option1:prepare
 npm run demo:option1:render
 npm run demo:option1:clean
 ```
 
-1. **Prepare** creates a disposable `dac-option1-demo` checkout with AKS code and old VM docs. The stale-document failure is expected and explained in the terminal.
-2. **Render** updates the same `README.md` and `docs/architecture.md`, verifies both Mermaid blocks, runs the tests, and prints exactly what to show in VS Code. It never pushes.
-3. **Clean** removes only that registered disposable worktree. It refuses to delete it if any unexpected file changed.
+1. **Baseline** creates `dac-option1-vm-baseline` with matching VM code and VM documentation, verifies it, and prints the exact code, diagram, and Markdown locations to show.
+2. **Prepare** creates a separate `dac-option1-demo` checkout with AKS code and old VM docs. The stale-document failure is expected and explained in the terminal. In the existing parent VS Code workspace, expand `dac-option1-demo`; do not demonstrate the README in `dac-workload-modernization`, because that feature branch already contains the rendered AKS documentation. Confirm the demo README shows **Azure Virtual Machines (IaaS)** before rendering.
+3. **Render** updates the same `README.md` and `docs/architecture.md`, verifies both Mermaid blocks, runs the tests, and prints exactly what to show in VS Code. It never pushes.
+4. **Clean** removes both registered disposable worktrees. It refuses to delete either one if an unexpected file changed.
+
+For the local Copilot demonstration, use the isolated Option 2A helper:
+
+```powershell
+npm run demo:option2a:prepare
+npm run demo:option2a:check
+npm run demo:option2a:clean
+```
+
+The helper pairs the AKS proposal code with the old VM versions of `README.md` and `docs/architecture.md`, creating the same visible drift as Option 1. Open the printed `dac-option2a-agent-demo` checkout in a separate VS Code window, select the `dac-architecture-guardian` custom agent in Copilot Chat, and ask it to use the `refresh-workload-docs` skill. The independent check verifies the resulting local AKS documentation diff; nothing commits or pushes. To download the verified Option 2B workload and central review-patch artifacts from the recorded successful GitHub runs, use `npm run demo:option2b:evidence`.
 
 For central publication, run the [workload workflow](https://github.com/gitpavleenbali/dac-workload-modernization/actions/workflows/dac-translator-sync.yml) on `feat/modernize-vm-to-aks`, select **Update the central docs PR**, and leave **Option 2** unchecked.
 
@@ -159,10 +171,9 @@ For central publication, run the [workload workflow](https://github.com/gitpavle
 | --- | --- | --- |
 | **1 · Deterministic translator** | The same rules refresh the existing diagrams and Markdown. An authorized opt-in sync separately updates the rolling central pull request. | [Workload PR #1](https://github.com/gitpavleenbali/dac-workload-modernization/pull/1/files) → [central docs PR #1](https://github.com/gitpavleenbali/dac-central-platform-docs/pull/1/files). [Workload sync](https://github.com/gitpavleenbali/dac-workload-modernization/actions/runs/44972624473) and [central check](https://github.com/gitpavleenbali/dac-central-platform-docs/actions/runs/44972674206). |
 | **2A · Spec-driven local Copilot** | Copilot follows the spec, runs the same translator and checks, and leaves a diff in the workload checkout. It does not push. | [Local walkthrough and recorded scaling change](https://gitpavleenbali.github.io/dac-workload-modernization/#option-two-local). |
-| **2B · Copilot in GitHub Actions** | The opted-in workflow uses verified facts to draft a review note and question. A verifier checks each patch, but neither agent applies it. | [Workload run](https://github.com/gitpavleenbali/dac-workload-modernization/actions/runs/44971666753) and [central run](https://github.com/gitpavleenbali/dac-central-platform-docs/actions/runs/44972101526), with [both patches shown inline](https://gitpavleenbali.github.io/dac-workload-modernization/#agentic-ci). |
-| **2C · Cloud agent on demand** | A separate issue asks the cloud agent to draft an architecture decision record. The agent does not change the rolling sync or generated diagrams. | [Issue #2](https://github.com/gitpavleenbali/dac-central-platform-docs/issues/2) → [draft PR #3](https://github.com/gitpavleenbali/dac-central-platform-docs/pull/3/files) and its [validation](https://github.com/gitpavleenbali/dac-central-platform-docs/actions/runs/44890039831). |
+| **2B · GitHub cloud agentic delivery** | Two GitHub-hosted paths: an Agentic Workflow uses verified facts to attach unapplied review patches in both repositories; a separate Copilot Cloud Agent session drafts ADR-003 in its own draft PR. Neither path regenerates diagrams, deploys, approves, or merges. | [Workload Agentic Workflow run](https://github.com/gitpavleenbali/dac-workload-modernization/actions/runs/44971666753) → [central run](https://github.com/gitpavleenbali/dac-central-platform-docs/actions/runs/44972101526); [Cloud Agent issue #2](https://github.com/gitpavleenbali/dac-central-platform-docs/issues/2) → [draft PR #3](https://github.com/gitpavleenbali/dac-central-platform-docs/pull/3/files) → [validation](https://github.com/gitpavleenbali/dac-central-platform-docs/actions/runs/44890039831). |
 
-The [local spec](specs/doc-as-code/refresh-workload-docs.md) defines what Option 2A can change. It is used with the [repository instructions](.github/copilot-instructions.md), [custom agent](.github/agents/dac-architecture-guardian.agent.md), [skill](.github/skills/refresh-workload-docs/SKILL.md), and [VS Code prompt](.github/prompts/refresh-workload-docs.prompt.md). From the workload checkout, the equivalent Copilot CLI entry point is `copilot --agent dac-architecture-guardian`. The recorded scaling change uses the AKS proposal, not `main`.
+The [local spec](specs/doc-as-code/refresh-workload-docs.md) defines what Option 2A can change. It is used with the [repository instructions](.github/copilot-instructions.md), [custom agent](.github/agents/dac-architecture-guardian.agent.md), [skill](.github/skills/refresh-workload-docs/SKILL.md), and [VS Code prompt](.github/prompts/refresh-workload-docs.prompt.md). The local Option 2A rehearsal uses the same AKS-code/VM-document mismatch as Option 1, but the custom agent coordinates the renderer and checks through VS Code Copilot Chat.
 
 The repository owner can opt in to sync on the migration branch in the [workload workflow](https://github.com/gitpavleenbali/dac-workload-modernization/actions/workflows/dac-translator-sync.yml). For Option 1, select **Update the central docs PR** only. For Option 2B, select both options. Azure AI Foundry inference uses GitHub OpenID Connect (OIDC) rather than a static inference token or API key; the central publisher uses separate scoped GitHub credentials. None of these paths deploy the workload or merge a PR.
 

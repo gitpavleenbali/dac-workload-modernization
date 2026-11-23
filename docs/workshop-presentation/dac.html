@@ -644,6 +644,7 @@
         <a href="#what">What</a>
         <a href="#how">How</a>
         <a href="#evidence-tour">Evidence &amp; Links</a>
+        <a href="#azure-devops-path">Azure DevOps</a>
         <a href="#glossary">Glossary</a>
         <button type="button" id="print-document">Print / Save PDF</button>
         <div class="workshop-modes" role="group" aria-label="Workshop display">
@@ -7857,9 +7858,106 @@ File Added:       products/grid-telemetry-service/decisions/adr-003-vm-to-aks.md
         <!-- END WORKSHOP:evidence-deck -->
     </section>
 
+    <section id="azure-devops-path" aria-labelledby="azure-devops-path-title">
+      <h2 id="azure-devops-path-title">Azure DevOps challenge and remediation</h2>
+      <p class="section-intro"><strong>Audience question:</strong> “What if our source repositories are in Azure Repos and we do not use GitHub?” The deterministic DAC core is portable, but GitHub Agentic Workflows and GitHub Copilot cloud-agent sessions are GitHub-hosted capabilities. Azure DevOps needs either its native review/local-assistance features or a custom Azure Pipelines integration.</p>
+
+      <figure class="artifact-diagram">
+        <figcaption>Recommended custom architecture · <a href="./assets/azure-devops-agentic-dac.svg" target="_blank" rel="noopener">Open SVG</a> · <a href="./assets/azure-devops-agentic-dac.png" target="_blank" rel="noopener">Open PNG</a> · <a href="./assets/azure-devops-agentic-dac.excalidraw" download>Edit in Excalidraw</a></figcaption>
+        <div tabindex="0" role="region" aria-label="Azure DevOps agentic Doc as Code reference architecture">
+          <img src="./assets/azure-devops-agentic-dac.svg" width="1600" height="1120" alt="Azure Repos triggers Azure Pipelines. Deterministic DAC produces architecture evidence. An optional Microsoft Foundry Agent produces bounded structured output. An independent verifier checks the patch. Azure Repos policies govern the draft pull request and controlled merge.">
+        </div>
+      </figure>
+
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Azure DevOps agentic capability choices">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Path</th>
+              <th>What is available</th>
+              <th>Best fit</th>
+              <th>Important boundary</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>Azure DevOps native</th>
+              <td><a href="https://learn.microsoft.com/azure/devops/repos/git/copilot-code-reviews?view=azure-devops" target="_blank" rel="noopener">Copilot code review</a>, the <a href="https://learn.microsoft.com/azure/devops/mcp-server/remote-mcp-server?view=azure-devops" target="_blank" rel="noopener">Azure DevOps Remote MCP Server</a>, and the <a href="https://docs.github.com/copilot/how-tos/github-copilot-app/manage-azure-devops-work" target="_blank" rel="noopener">Copilot app Azure DevOps integration</a>.</td>
+              <td>AI-assisted PR review and developer-driven local agent sessions while keeping Azure Boards, Repos and Pipelines.</td>
+              <td>Cloud sessions are not available for Azure Repos in the Copilot app. Native code review comments do not replace required human approvals.</td>
+            </tr>
+            <tr>
+              <th>Recommended enterprise pattern</th>
+              <td>Azure Pipelines runs deterministic DAC, optionally calls a versioned Microsoft Foundry Agent with bounded evidence, verifies structured output, then creates an Azure Repos branch and PR.</td>
+              <td>Teams that need an always-on, governed, Azure-native documentation workflow without moving repositories.</td>
+              <td>This is a custom integration: pipeline template, Foundry caller, verifier, Azure Repos publisher and sweep inventory must be engineered and operated.</td>
+            </tr>
+            <tr>
+              <th>Experimental path</th>
+              <td><a href="https://github.com/githubnext/ado-aw" target="_blank" rel="noopener"><code>ado-aw</code></a> compiles Markdown agent instructions into Azure Pipelines with agent, detection and safe-output stages.</td>
+              <td>Proofs of concept that want a GitHub Agentic Workflows-like authoring model on Azure DevOps.</td>
+              <td>Experimental open-source project; treat it as a PoC, not a supported production commitment or SLA.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="deck-columns">
+        <article class="record">
+          <h3>Challenge</h3>
+          <ul>
+            <li>Azure Repos does not currently provide a native equivalent of the full GitHub Copilot cloud-agent and GitHub Agentic Workflows experience.</li>
+            <li>The portable Node.js DAC translator can run anywhere, but Git-host publishing, agent execution and PR APIs require host-specific wiring.</li>
+            <li>A model response must never directly become documentation without deterministic evidence, schema checks and patch validation.</li>
+          </ul>
+        </article>
+        <article class="record">
+          <h3>Recommended remediation</h3>
+          <ol>
+            <li><strong>Detect deterministically:</strong> Azure Pipeline checks out workload and central docs, extracts before/after ArchitectureIR and skips when the semantic hash is unchanged.</li>
+            <li><strong>Invoke Foundry only when useful:</strong> pass a bounded IR/delta JSON payload to a pinned prompt agent through the Foundry Responses API.</li>
+            <li><strong>Verify separately:</strong> enforce strict structured output, evidence matching, path allowlists, Mermaid validation, human-prose preservation and <code>git apply --check</code>.</li>
+            <li><strong>Publish through Azure Repos:</strong> push <code>dac-sync/&lt;service-id&gt;</code> and create a draft PR with required reviewers and build validation.</li>
+          </ol>
+        </article>
+      </div>
+
+      <article class="record">
+        <h3>Reference architecture: Azure Pipelines + Foundry Agent</h3>
+        <ol class="compact-steps">
+          <li><strong>Trigger:</strong> pull request, merge, manual dispatch or a UTC <a href="https://learn.microsoft.com/azure/devops/pipelines/process/scheduled-triggers?view=azure-devops" target="_blank" rel="noopener">pipeline schedule</a>.</li>
+          <li><strong>Stage 1 · DAC:</strong> extract IR, compute semantic delta, render managed sections and publish an evidence artifact without AI.</li>
+          <li><strong>Stage 2 · Agent:</strong> use an Azure Resource Manager service connection with <a href="https://learn.microsoft.com/azure/devops/pipelines/library/connect-to-azure?view=azure-devops" target="_blank" rel="noopener">workload identity federation</a> to call a Foundry prompt agent. Give the caller only <a href="https://learn.microsoft.com/azure/foundry/agents/concepts/agent-endpoint-authorization" target="_blank" rel="noopener">Foundry Agent Consumer</a> access.</li>
+          <li><strong>Stage 3 · Verify:</strong> a separate job with no Foundry credentials validates the JSON and patch against deterministic evidence.</li>
+          <li><strong>Stage 4 · PR:</strong> a separate repository identity uses <a href="https://learn.microsoft.com/cli/azure/repos/pr?view=azure-cli-latest" target="_blank" rel="noopener"><code>az repos pr create</code></a> or Azure DevOps REST to create a draft PR.</li>
+        </ol>
+        <p><strong>Operating principle:</strong> DAC owns generated facts and diagrams. The Foundry Agent may add bounded narrative, reviewer questions or remediation suggestions. Azure Repos branch policies and human reviewers own approval and merge.</p>
+      </article>
+
+      <article class="record">
+        <h3>Security and production controls</h3>
+        <div class="deck-columns">
+          <div>
+            <h4>Identity separation</h4>
+            <p>Use separate workload identities for Foundry invocation and Azure Repos write access. The Foundry job must not push code; the publisher job must not hold Foundry credentials.</p>
+          </div>
+          <div>
+            <h4>PR governance</h4>
+            <p>Require build validation, comment resolution, protected target branches and reviewers. Keep bot PRs draft and leave auto-complete disabled unless the organization explicitly approves it.</p>
+          </div>
+        </div>
+      </article>
+
+      <p class="comparison-takeaway"><strong>MVP boundary:</strong> This workshop does not implement or test an Azure Pipelines publisher, Azure Repos PR integration, scheduled cross-repository sweep, or a Foundry Agent Service agent. The section describes supported building blocks and a recommended custom architecture—not a completed Azure DevOps demo.</p>
+      <aside class="facilitator" aria-label="Azure DevOps challenge and remediation facilitation notes" hidden>
+        <h3>Customer discussion · Azure DevOps</h3>
+        <p><strong>Say:</strong> “You can keep Azure Repos. The deterministic compiler already travels. The missing work is the host-specific publisher and the governed agent invocation. Start with native Copilot review; build the Pipeline + Foundry pattern only when you need an always-on doer.”</p>
+      </aside>
+    </section>
+
     <section id="review" aria-labelledby="review-title">
       <h2 id="review-title">Choose the right path for the change</h2>
-      <p><strong>Use the translator</strong> to update supported architecture facts in existing docs. <strong>Use local Copilot</strong> to help refresh and verify those facts. <strong>Use hosted proposals</strong> to bring a reviewer question or decision draft into human review. Validate what is actually deployed separately.</p>
+      <p><strong>Use the translator</strong> to update supported architecture facts in existing docs. <strong>Use local Copilot</strong> to help refresh and verify those facts. <strong>Use GitHub cloud agents</strong> for hosted review or scoped repository work. <strong>For Azure Repos</strong>, start with native Copilot review or build the governed Azure Pipelines + Foundry pattern described above. Validate what is actually deployed separately.</p>
       <aside class="facilitator" aria-label="Review facilitation notes" hidden>
         <h3>115–120 min · Make the choice explicit</h3>
         <p><strong>Ask:</strong> For a new node pool, an unresolved rollback plan, and evidence of a production cutover, which path would you use? Expect: translator, human-reviewed proposal, and deployment or monitoring evidence, respectively.</p>
